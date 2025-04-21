@@ -1,0 +1,155 @@
+package com.example.schedulebuilder.ui.event_entry
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.schedulebuilder.data.FullScheduleEvent
+import com.example.schedulebuilder.data.Location
+import com.example.schedulebuilder.data.LocationsRepositoryInterface
+import com.example.schedulebuilder.data.Obligation
+import com.example.schedulebuilder.data.ScheduleEvent
+import com.example.schedulebuilder.data.ScheduleEventsRepositoryInterface
+import com.example.schedulebuilder.data.Subject
+import com.example.schedulebuilder.data.SubjectsRepositoryInterface
+import com.example.schedulebuilder.data.Teacher
+import com.example.schedulebuilder.data.TeachersRepositoryInterface
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+
+class EventEntryViewModel(
+    private val scheduleEventsRepository: ScheduleEventsRepositoryInterface,
+    private val subjectsRepository: SubjectsRepositoryInterface,
+    private val teachersRepository: TeachersRepositoryInterface,
+    private val locationsRepository: LocationsRepositoryInterface
+) : ViewModel() {
+
+    val predefinedSubjectsState: StateFlow<PredefinedSubjectsState> = subjectsRepository.getAllSubjectsStream().map { PredefinedSubjectsState(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = PredefinedSubjectsState()
+        )
+
+    val teachersListState: StateFlow<TeachersListState> = teachersRepository.getAllTeachersStream().map { TeachersListState(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = TeachersListState()
+        )
+
+    val locationsListState: StateFlow<LocationsListState> = locationsRepository.getAllLocationsStream().map { LocationsListState(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = LocationsListState()
+        )
+
+    companion object {
+        private const val TIMEOUT_MILLIS = 5_000L
+    }
+
+    var eventUiState by mutableStateOf(ScheduleEventUiState())
+        private set
+
+    private fun validateInput(uiState: ScheduleEventDetails = eventUiState.scheduleEventDetails): Boolean {
+        return with(uiState) {
+            subject.shortenedCode.isNotBlank() && teacher.teacherName.isNotBlank() && location.roomCode.isNotBlank() && startHour >= 7 && endHour <= 20 && startHour < endHour
+        }
+    }
+
+    fun updateUiState(scheduleEventDetails: ScheduleEventDetails) {
+        eventUiState =
+            ScheduleEventUiState(scheduleEventDetails = scheduleEventDetails, isEntryValid = validateInput(scheduleEventDetails))
+    }
+
+    suspend fun saveScheduleEvent() {
+        if (validateInput()) {
+            subjectsRepository.insertSubject(eventUiState.scheduleEventDetails.subject)
+            teachersRepository.insertTeacher(eventUiState.scheduleEventDetails.teacher)
+            locationsRepository.insertLocation(eventUiState.scheduleEventDetails.location)
+            scheduleEventsRepository.insertScheduleEvent(eventUiState.scheduleEventDetails.toScheduleEvent())
+        }
+    }
+
+}
+
+data class PredefinedSubjectsState(val subjectsList: List<Subject> = listOf())
+
+data class TeachersListState(val teachersList: List<Teacher> = listOf())
+
+data class LocationsListState(val locationsList: List<Location> = listOf())
+
+data class ScheduleEventUiState(
+    val scheduleEventDetails: ScheduleEventDetails = ScheduleEventDetails(),
+    val isEntryValid: Boolean = false
+)
+
+data class ScheduleEventDetails(
+    val id: Int = 0,
+    val subject: Subject = Subject("", ""),
+    val teacher: Teacher = Teacher(""),
+    val location: Location = Location(""),
+    val obligation: Obligation = Obligation.P,
+    val day: Int = 1,
+    val startHour: Int = 7,
+    val endHour: Int = 9,
+
+    val isCustomSubject: Boolean = subject.shortenedCode.isEmpty()
+)
+
+//val shortenedCode: String,
+//
+//val fullDisplayName: String,
+fun ScheduleEventDetails.toCustomSubject(): Subject {
+    val name = this.subject.fullDisplayName.trim()
+
+    // Generate a valid shortened code that can be used as primary key
+    val code = if (name.isNotBlank()) {
+        // Take the first 3 characters, or fewer if name is shorter
+        // Uppercase to maintain consistency
+        val baseCode = if (name.length >= 3) name.substring(0, 3) else name
+        baseCode.uppercase()
+    } else {
+        // Fallback for empty names - should be handled in validation
+        ""
+    }
+
+    return Subject(
+    shortenedCode = code,
+    fullDisplayName = name)
+
+}
+
+
+fun ScheduleEventDetails.toScheduleEvent(): ScheduleEvent = ScheduleEvent(
+    id = id,
+    teacherName = teacher.teacherName,
+    roomCode = location.roomCode,
+    subjectShortenedCode = subject.shortenedCode,
+    obligation = obligation,
+    day = day,
+    startHour = startHour,
+    endHour = endHour
+)
+
+
+fun FullScheduleEvent.toScheduleEventUiState(isEntryValid: Boolean = false): ScheduleEventUiState = ScheduleEventUiState(
+    scheduleEventDetails = this.toScheduleEventDetails(),
+    isEntryValid = isEntryValid
+)
+
+fun FullScheduleEvent.toScheduleEventDetails(): ScheduleEventDetails = ScheduleEventDetails(
+    id = scheduleEvent.id,
+    subject = subject,
+    teacher = teacher,
+    location = location,
+    obligation = scheduleEvent.obligation,
+    day = scheduleEvent.day,
+    startHour = scheduleEvent.startHour,
+    endHour = scheduleEvent.endHour
+)
+
