@@ -7,7 +7,6 @@ import androidx.room.RoomDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Database(
     entities = [ScheduleEvent::class, Subject::class, Teacher::class, Location::class],
@@ -26,10 +25,6 @@ abstract class ScheduleDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): ScheduleDatabase {
             return Instance ?: synchronized(this) {
-//                Room.databaseBuilder(context, ScheduleDatabase::class.java, "schedule_database")
-//                    .createFromAsset("../database/schedulebuilder.db")
-//                    .build()
-//                    .also { Instance = it }
 
                 val instance = Room.databaseBuilder(
                     context,
@@ -50,17 +45,15 @@ abstract class ScheduleDatabase : RoomDatabase() {
         }
 
         private suspend fun populateDatabase(database: ScheduleDatabase) {
-            // Add teachers
+
             database.teacherDao().insert(Teacher("Dr. Johnson"))
             database.teacherDao().insert(Teacher("Prof. Smith"))
             database.teacherDao().insert(Teacher("Dr. Garcia"))
 
-            // Add locations
             database.locationDao().insert(Location("A101"))
             database.locationDao().insert(Location("B205"))
             database.locationDao().insert(Location("C310"))
 
-            // Add subjects
             database.subjectDao().insert(Subject("CS101", "Introduction to Programming"))
             database.subjectDao().insert(Subject("MATH202", "Calculus II"))
             database.subjectDao().insert(Subject("PHYS101", "Physics Fundamentals"))

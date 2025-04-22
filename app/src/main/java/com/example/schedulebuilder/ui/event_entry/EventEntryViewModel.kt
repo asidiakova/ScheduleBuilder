@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.schedulebuilder.data.FullScheduleEvent
 import com.example.schedulebuilder.data.Location
 import com.example.schedulebuilder.data.LocationsRepositoryInterface
 import com.example.schedulebuilder.data.Obligation
@@ -128,21 +127,3 @@ fun ScheduleEventDetails.toScheduleEvent(): ScheduleEvent = ScheduleEvent(
     startHour = startHour,
     endHour = endHour
 )
-
-
-fun FullScheduleEvent.toScheduleEventUiState(isEntryValid: Boolean = false): ScheduleEventUiState = ScheduleEventUiState(
-    scheduleEventDetails = this.toScheduleEventDetails(),
-    isEntryValid = isEntryValid
-)
-
-fun FullScheduleEvent.toScheduleEventDetails(): ScheduleEventDetails = ScheduleEventDetails(
-    id = scheduleEvent.id,
-    subject = subject,
-    teacher = teacher,
-    location = location,
-    obligation = scheduleEvent.obligation,
-    day = scheduleEvent.day,
-    startHour = scheduleEvent.startHour,
-    endHour = scheduleEvent.endHour
-)
-

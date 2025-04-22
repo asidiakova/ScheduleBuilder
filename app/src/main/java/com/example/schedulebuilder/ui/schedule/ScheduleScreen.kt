@@ -2,7 +2,6 @@
 
 package com.example.schedulebuilder.ui.schedule
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +39,6 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,8 +69,8 @@ object ScheduleDestination : NavDestination {
     override val titleRes = R.string.app_name
 }
 
-val START_HOUR = 7
-val TIMESLOTS_COUNT = 13
+const val START_HOUR = 7
+const val TIMESLOTS_COUNT = 13
 
 @Composable
 fun ScheduleScreen(
@@ -81,8 +79,6 @@ fun ScheduleScreen(
     onClickEdit: (Int) -> Unit,
     viewModel: ScheduleScreenViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-
-    var presses by remember { mutableIntStateOf(0) }
 
     val scheduleUiState by viewModel.scheduleUiState.collectAsState()
 
