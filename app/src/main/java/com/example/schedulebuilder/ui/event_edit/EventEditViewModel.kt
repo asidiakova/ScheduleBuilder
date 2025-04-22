@@ -1,8 +1,9 @@
-package com.example.schedulebuilder.ui.event_entry
+package com.example.schedulebuilder.ui.event_edit
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.schedulebuilder.data.FullScheduleEvent
@@ -17,15 +18,57 @@ import com.example.schedulebuilder.data.Teacher
 import com.example.schedulebuilder.data.TeachersRepositoryInterface
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class EventEntryViewModel(
+class EventEditViewModel(
+    savedStateHandle: SavedStateHandle,
     private val scheduleEventsRepository: ScheduleEventsRepositoryInterface,
     private val subjectsRepository: SubjectsRepositoryInterface,
     private val teachersRepository: TeachersRepositoryInterface,
     private val locationsRepository: LocationsRepositoryInterface
 ) : ViewModel() {
+
+    var scheduleEventUiState by mutableStateOf(ScheduleEventUiState())
+        private set
+
+    private val scheduleEventId: Int = checkNotNull(savedStateHandle[EventEditDestination.eventIdArg])
+
+    init {
+        viewModelScope.launch {
+            scheduleEventUiState = scheduleEventsRepository.getFullScheduleEventStream(scheduleEventId)
+                .filterNotNull()
+                .first()
+                .toScheduleEventUiState(true)
+        }
+    }
+
+
+
+
+    private fun validateInput(uiState: ScheduleEventDetails): Boolean {
+        return with(uiState) {
+            subject.shortenedCode.isNotBlank() && teacher.teacherName.isNotBlank() && location.roomCode.isNotBlank() && startHour >= 7 && endHour <= 20 && startHour < endHour
+        }
+    }
+
+    fun updateUiState(scheduleEventDetails: ScheduleEventDetails) {
+        scheduleEventUiState =
+            ScheduleEventUiState(scheduleEventDetails = scheduleEventDetails, isEntryValid = validateInput(scheduleEventDetails))
+    }
+
+    suspend fun saveScheduleEventEdits() {
+        if (validateInput(scheduleEventUiState.scheduleEventDetails)) {
+            subjectsRepository.insertSubject(scheduleEventUiState.scheduleEventDetails.subject)
+            teachersRepository.insertTeacher(scheduleEventUiState.scheduleEventDetails.teacher)
+            locationsRepository.insertLocation(scheduleEventUiState.scheduleEventDetails.location)
+            scheduleEventsRepository.updateScheduleEvent(scheduleEventUiState.scheduleEventDetails.toScheduleEvent())
+        }
+    }
+
 
     val predefinedSubjectsState: StateFlow<PredefinedSubjectsState> = subjectsRepository.getAllSubjectsStream().map { PredefinedSubjectsState(it) }
         .stateIn(
@@ -51,30 +94,6 @@ class EventEntryViewModel(
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
-
-    var eventUiState by mutableStateOf(ScheduleEventUiState())
-        private set
-
-    private fun validateInput(uiState: ScheduleEventDetails = eventUiState.scheduleEventDetails): Boolean {
-        return with(uiState) {
-            subject.shortenedCode.isNotBlank() && teacher.teacherName.isNotBlank() && location.roomCode.isNotBlank() && startHour >= 7 && endHour <= 20 && startHour < endHour
-        }
-    }
-
-    fun updateUiState(scheduleEventDetails: ScheduleEventDetails) {
-        eventUiState =
-            ScheduleEventUiState(scheduleEventDetails = scheduleEventDetails, isEntryValid = validateInput(scheduleEventDetails))
-    }
-
-    suspend fun saveScheduleEvent() {
-        if (validateInput()) {
-            subjectsRepository.insertSubject(eventUiState.scheduleEventDetails.subject)
-            teachersRepository.insertTeacher(eventUiState.scheduleEventDetails.teacher)
-            locationsRepository.insertLocation(eventUiState.scheduleEventDetails.location)
-            scheduleEventsRepository.insertScheduleEvent(eventUiState.scheduleEventDetails.toScheduleEvent())
-        }
-    }
-
 }
 
 data class PredefinedSubjectsState(val subjectsList: List<Subject> = listOf())

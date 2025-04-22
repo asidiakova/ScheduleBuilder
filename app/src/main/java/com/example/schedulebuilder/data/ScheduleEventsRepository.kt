@@ -9,6 +9,10 @@ class ScheduleEventsRepository(private val scheduleEventDao: ScheduleEventDao) :
 
     override suspend fun updateScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.update(scheduleEvent)
 
+    override fun getScheduleEventStream(id: Int): Flow<ScheduleEvent?> = scheduleEventDao.getScheduleEvent(id)
+
+    override fun getFullScheduleEventStream(id: Int): Flow<FullScheduleEvent?> = scheduleEventDao.getFullScheduleEvent(id)
+
     override fun getAllScheduleEventsStream(): Flow<List<ScheduleEvent>> = scheduleEventDao.getAllScheduleEvents()
 
     override fun getAllFullScheduleEventsStream(): Flow<List<FullScheduleEvent>>  = scheduleEventDao.getAllFullScheduleEvents()

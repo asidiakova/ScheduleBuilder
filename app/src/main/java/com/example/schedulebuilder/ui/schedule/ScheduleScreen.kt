@@ -2,6 +2,7 @@
 
 package com.example.schedulebuilder.ui.schedule
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +38,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,18 +53,15 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
 import com.example.schedulebuilder.data.FullScheduleEvent
 import com.example.schedulebuilder.data.Obligation
 import com.example.schedulebuilder.ui.AppViewModelProvider
-import com.example.schedulebuilder.ui.event_entry.AlertDialogExample
 import com.example.schedulebuilder.ui.navigation.NavDestination
 
 //TODO: animations when click on event https://m3.material.io/styles/motion/transitions/transition-patterns#b67cba74-6240-4663-a423-d537b6d21187
@@ -81,6 +78,7 @@ val TIMESLOTS_COUNT = 13
 fun ScheduleScreen(
     editSchedule: () -> Unit,
     addEvent: () -> Unit,
+    onClickEdit: (Int) -> Unit,
     viewModel: ScheduleScreenViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
 
@@ -149,18 +147,24 @@ fun ScheduleScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CenteredScheduleGrid(
-                events = scheduleUiState.eventsList, modifier = Modifier.fillMaxWidth(), onEventClick = { selectedEvent = it }
+                events = scheduleUiState.eventsList,
+                modifier = Modifier.fillMaxWidth(),
+                onEventClick = {
+                    selectedEvent = it
+                }
             )
             selectedEvent?.let { event ->
                 EventDetailsDialog(
                     event = event,
                     onDismissRequest = { selectedEvent = null },
-                    onConfirmation = { selectedEvent = null }
+                    onClickEdit = {
+                        onClickEdit(event.scheduleEvent.id)
+                        selectedEvent = null
+                    }
                 )
             }
         }
     }
-
 
 
 }
@@ -175,7 +179,7 @@ fun CenteredScheduleGrid(
         modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
     ) {
         ScheduleTable(
-            modifier = Modifier.fillMaxWidth(0.98f), events = events, onEventClick = {onEventClick}
+            modifier = Modifier.fillMaxWidth(0.98f), events = events, onEventClick = onEventClick
         )
     }
 
@@ -302,7 +306,7 @@ fun ScheduleTable(
                                             .width(with(LocalDensity.current) { eventWidthPx.toDp() })
                                             .fillMaxHeight()
                                             .padding(1.dp),
-                                        onclick = {onEventClick(event)}
+                                        onClick = { onEventClick(event) }
                                     )
 
                                 }
@@ -318,7 +322,9 @@ fun ScheduleTable(
 
 @Composable
 fun BoxWithConstraintsScope.EventCard(
-    event: FullScheduleEvent, modifier: Modifier = Modifier, onclick: (FullScheduleEvent) -> Unit = {}
+    event: FullScheduleEvent,
+    modifier: Modifier = Modifier,
+    onClick: (FullScheduleEvent) -> Unit = {}
 ) {
     Card(
         modifier = modifier.fillMaxSize(), colors = CardDefaults.cardColors(
@@ -331,7 +337,7 @@ fun BoxWithConstraintsScope.EventCard(
             )
         ), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = {
-            onclick
+            onClick(event)
         }
     ) {
         Column(
@@ -376,7 +382,7 @@ fun BoxWithConstraintsScope.EventCard(
 fun EventDetailsDialog(
     event: FullScheduleEvent,
     onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
+    onClickEdit: (Int) -> Unit,
 ) {
     Dialog(
         onDismissRequest = { onDismissRequest() }
@@ -432,10 +438,12 @@ fun EventDetailsDialog(
                         Text("Dismiss")
                     }
                     TextButton(
-                        onClick = { onConfirmation() },
+                        onClick = {
+                            onClickEdit(event.scheduleEvent.id)
+                        },
                         modifier = Modifier.padding(8.dp),
                     ) {
-                        Text("Confirm")
+                        Text("Edit event")
                     }
                 }
             }

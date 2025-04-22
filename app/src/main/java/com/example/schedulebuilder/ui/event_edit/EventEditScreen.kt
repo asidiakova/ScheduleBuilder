@@ -1,8 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.example.schedulebuilder.ui.event_entry
+package com.example.schedulebuilder.ui.event_edit
 
-//TODO: sanity check https://m3.material.io/components/dialogs/guidelines#4751e908-c6f9-44a3-90c1-73f5e653b067
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,21 +61,52 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-object EventEntryDestination : NavDestination {
-    override val route = "add_schedule_event"
+object EventEditDestination : NavDestination {
+    override val route = "edit_schedule_event"
     override val titleRes = R.string.app_name
+    const val eventIdArg = "eventId"
+    val routeWithArgs = "$route/{$eventIdArg}"
 }
 
 @Composable
-fun EventEntryDialog(
+fun EventEditScreen(
+    navigateBack: () -> Unit,
+    viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
+) {
+    val openAlertDialog = remember { mutableStateOf(false) }
+
+    EventEditDialog(
+        onDismissRequest = {
+            openAlertDialog.value = true
+        },
+        navigateBack = navigateBack,
+        viewModel = viewModel
+    )
+
+    if (openAlertDialog.value) {
+        AlertDialogExample(
+            onDismissRequest = { openAlertDialog.value = false },
+            onConfirmation = {
+                openAlertDialog.value = false
+                navigateBack()
+            },
+            dialogTitle = "Discard changes?",
+            dialogText = "Are you sure you want to discard your changes and close the window?",
+        )
+    }
+}
+
+@Composable
+fun EventEditDialog(
     onDismissRequest: () -> Unit,
-    viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    navigateBack: () -> Unit,
+    viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val coroutineScope = rememberCoroutineScope()
     val predefinedSubjectsState by viewModel.predefinedSubjectsState.collectAsState()
     val teachersListState by viewModel.teachersListState.collectAsState()
     val locationsListState by viewModel.locationsListState.collectAsState()
-    val eventUiState = viewModel.eventUiState
+    val eventUiState = viewModel.scheduleEventUiState
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -89,7 +119,7 @@ fun EventEntryDialog(
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
-            EventEntryDialogContent(
+            EventEditDialogContent(
                 navigateBack = onDismissRequest,
                 predefinedSubjectsState = predefinedSubjectsState,
                 teachersListState = teachersListState,
@@ -98,8 +128,8 @@ fun EventEntryDialog(
                 onUpdateUiState = viewModel::updateUiState,
                 onSaveEvent = {
                     coroutineScope.launch {
-                        viewModel.saveScheduleEvent()
-                        onDismissRequest()
+                        viewModel.saveScheduleEventEdits()
+                        navigateBack()
                     }
                 }
             )
@@ -108,7 +138,7 @@ fun EventEntryDialog(
 }
 
 @Composable
-fun EventEntryDialogContent(
+fun EventEditDialogContent(
     navigateBack: () -> Unit,
     predefinedSubjectsState: PredefinedSubjectsState,
     teachersListState: TeachersListState,
@@ -122,7 +152,7 @@ fun EventEntryDialogContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Subject") },
+                title = { Text("Edit Subject") },
                 navigationIcon = {
                     IconButton(onClick = navigateBack) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -191,36 +221,9 @@ fun AlertDialogExample(
             ) {
                 Text("Dismiss")
             }
-        }
-    )
-}
-
-@Composable
-fun EventEntryScreen(
-    navigateBack: () -> Unit,
-    viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
-) {
-    val openAlertDialog = remember { mutableStateOf(false) }
-
-    EventEntryDialog(
-        onDismissRequest = {
-            openAlertDialog.value = true
         },
-        viewModel = viewModel
+        properties = DialogProperties(dismissOnClickOutside = true),
     )
-
-    if (openAlertDialog.value) {
-        AlertDialogExample(
-            onDismissRequest = { openAlertDialog.value = false },
-            onConfirmation = {
-                openAlertDialog.value = false
-                navigateBack()
-            },
-            dialogTitle = "Discard changes?",
-            dialogText = "Are you sure you want to discard your changes and close the window?",
-        )
-    }
-
 }
 
 @Composable
