@@ -47,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
@@ -61,7 +60,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.schedulebuilder.ui.event_edit.AlertDialogExample
+import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
 
 object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
@@ -116,7 +115,7 @@ fun EventEntryDialog(
         }
 
         if (openSanityCheckDialog.value) {
-            AlertDialogExample(
+            ConfirmationDialog(
                 onDismissRequest = { openSanityCheckDialog.value = false },
                 onConfirmation = {
                     openSanityCheckDialog.value = false
@@ -178,45 +177,6 @@ fun EventEntryDialogContent(
     }
 }
 
-// TODO: dialog properties e.g. properties = DialogProperties(dismissOnClickOutside = true)
-@Composable
-fun AlertDialogExample(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
-    dialogTitle: String,
-    dialogText: String,
-) {
-    AlertDialog(
-        title = {
-            Text(text = dialogTitle)
-        },
-        text = {
-            Text(text = dialogText)
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirmation()
-                }
-            ) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
-                Text("Dismiss")
-            }
-        }
-    )
-}
-
 @Composable
 fun EventEntryScreen(
     navigateBack: () -> Unit,
@@ -233,7 +193,7 @@ fun EventEntryScreen(
     )
 
     if (openAlertDialog.value) {
-        AlertDialogExample(
+        ConfirmationDialog(
             onDismissRequest = { openAlertDialog.value = false },
             onConfirmation = {
                 openAlertDialog.value = false
@@ -303,10 +263,6 @@ fun ScheduleEventEntryForm(
         modifier = Modifier.fillMaxWidth()
     )
 
-
-
-
-
     Spacer(modifier = Modifier.height(16.dp))
 
     RadioButtonObligationSelection(
@@ -315,8 +271,6 @@ fun ScheduleEventEntryForm(
     )
 
     Spacer(modifier = Modifier.height(24.dp))
-
-
 }
 
 @Composable
@@ -364,7 +318,6 @@ fun PredefinedSubjectSelection(
             }
         }
     }
-
 }
 
 @Composable
@@ -648,48 +601,3 @@ fun RadioButtonObligationSelection(
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun PredefinedSubjectSelectionPreview() {
-    PredefinedSubjectSelection(
-        predefinedSubjects = emptyList<Subject>(),
-        scheduleEventDetails = ScheduleEventDetails(),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CustomSubjectTextFieldPreview() {
-    CustomSubjectTextField(
-        scheduleEventDetails = ScheduleEventDetails(subject = Subject("VAMZ", "VAAAAMZ")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TeacherSelectionPreview() {
-    TeacherSelection(
-        teachersList = emptyList<Teacher>(),
-        scheduleEventDetails = ScheduleEventDetails(teacher = Teacher("Michal Duracik")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LocationSelectionPreview() {
-    LocationSelection(
-        locationsList = emptyList<Location>(),
-        scheduleEventDetails = ScheduleEventDetails(location = Location("AF3A6")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DaySelectionPreview() {
-    DaySelection(
-        scheduleEventDetails = ScheduleEventDetails(day = 1), onValueChange = {})
-}
-
-
-

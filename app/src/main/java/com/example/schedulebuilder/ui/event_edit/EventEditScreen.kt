@@ -48,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
@@ -93,7 +92,7 @@ fun EventEditScreen(
     )
 
     if (openDismissDialog.value) {
-        AlertDialogExample(
+        ConfirmationDialog(
             onDismissRequest = { openDismissDialog.value = false },
             onConfirmation = {
                 openDismissDialog.value = false
@@ -105,7 +104,7 @@ fun EventEditScreen(
     }
 
     if (openRemoveEventDialog.value) {
-        AlertDialogExample(
+        ConfirmationDialog(
             onDismissRequest = { openRemoveEventDialog.value = false },
             onConfirmation = {
                 openRemoveEventDialog.value = false
@@ -166,13 +165,12 @@ fun EventEditDialog(
                         }
                     }
                 },
-                onRemoveEvent =
-                    onRemoveEventRequest
+                onRemoveEvent = onRemoveEventRequest
             )
         }
 
         if (openSanityCheckDialog.value) {
-            AlertDialogExample(
+            ConfirmationDialog(
                 onDismissRequest = { openSanityCheckDialog.value = false },
                 onConfirmation = {
                     openSanityCheckDialog.value = false
@@ -236,9 +234,8 @@ fun EventEditDialogContent(
     }
 }
 
-// TODO: dialog properties e.g. properties = DialogProperties(dismissOnClickOutside = true)
 @Composable
-fun AlertDialogExample(
+fun ConfirmationDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
     dialogTitle: String,
@@ -340,10 +337,6 @@ fun ScheduleEventEntryForm(
         modifier = Modifier.fillMaxWidth()
     )
 
-
-
-
-
     Spacer(modifier = Modifier.height(16.dp))
 
     RadioButtonObligationSelection(
@@ -352,8 +345,6 @@ fun ScheduleEventEntryForm(
     )
 
     Spacer(modifier = Modifier.height(24.dp))
-
-
 
     RemoveEventButton(onRemoveEvent = onRemoveEvent)
 
@@ -601,7 +592,6 @@ fun TimeSelection(
             modifier = Modifier.padding(top = 4.dp)
         )
     }
-
 }
 
 @Composable
@@ -651,7 +641,6 @@ fun HourSelection(
             }
         }
     }
-
 }
 
 @Composable
@@ -702,50 +691,4 @@ fun RemoveEventButton(
     ) {
         Text("Remove event")
     }
-
 }
-
-@Preview(showBackground = true)
-@Composable
-fun PredefinedSubjectSelectionPreview() {
-    PredefinedSubjectSelection(
-        predefinedSubjects = emptyList<Subject>(),
-        scheduleEventDetails = ScheduleEventDetails(),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CustomSubjectTextFieldPreview() {
-    CustomSubjectTextField(
-        scheduleEventDetails = ScheduleEventDetails(subject = Subject("VAMZ", "VAAAAMZ")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TeacherSelectionPreview() {
-    TeacherSelection(
-        teachersList = emptyList<Teacher>(),
-        scheduleEventDetails = ScheduleEventDetails(teacher = Teacher("Michal Duracik")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LocationSelectionPreview() {
-    LocationSelection(
-        locationsList = emptyList<Location>(),
-        scheduleEventDetails = ScheduleEventDetails(location = Location("AF3A6")),
-        onValueChange = {})
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DaySelectionPreview() {
-    DaySelection(
-        scheduleEventDetails = ScheduleEventDetails(day = 1), onValueChange = {})
-}
-
-
-

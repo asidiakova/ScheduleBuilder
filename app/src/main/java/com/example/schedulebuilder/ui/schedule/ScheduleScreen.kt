@@ -70,7 +70,7 @@ import com.example.schedulebuilder.R
 import com.example.schedulebuilder.data.FullScheduleEvent
 import com.example.schedulebuilder.data.Obligation
 import com.example.schedulebuilder.ui.AppViewModelProvider
-import com.example.schedulebuilder.ui.event_edit.AlertDialogExample
+import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
 import com.example.schedulebuilder.ui.navigation.NavDestination
 import kotlinx.coroutines.launch
 
@@ -192,7 +192,7 @@ fun ScheduleScreen(
     }
 
     if (openAlertDialog.value) {
-        AlertDialogExample(
+        ConfirmationDialog(
             onDismissRequest = { openAlertDialog.value = false },
             onConfirmation = {
                 openAlertDialog.value = false
@@ -530,7 +530,6 @@ fun EditScheduleBottomSheet(
                 onClick = onDismissRequest
             )
         }
-
     }
 }
 
