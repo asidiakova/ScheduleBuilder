@@ -26,7 +26,6 @@ fun ScheduleNavHost(
     ) {
         composable(route = ScheduleDestination.route) {
             ScheduleScreen(
-                editSchedule = { },
                 addEvent = { navController.navigate(EventEntryDestination.route) },
                 onClickEdit = { navController.navigate("${EventEditDestination.route}/${it}") }
             )

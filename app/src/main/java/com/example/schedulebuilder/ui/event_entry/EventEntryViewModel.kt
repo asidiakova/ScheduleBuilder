@@ -26,26 +26,29 @@ class EventEntryViewModel(
     private val locationsRepository: LocationsRepositoryInterface
 ) : ViewModel() {
 
-    val predefinedSubjectsState: StateFlow<PredefinedSubjectsState> = subjectsRepository.getAllSubjectsStream().map { PredefinedSubjectsState(it) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = PredefinedSubjectsState()
-        )
+    val predefinedSubjectsState: StateFlow<PredefinedSubjectsState> =
+        subjectsRepository.getAllSubjectsStream().map { PredefinedSubjectsState(it) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = PredefinedSubjectsState()
+            )
 
-    val teachersListState: StateFlow<TeachersListState> = teachersRepository.getAllTeachersStream().map { TeachersListState(it) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = TeachersListState()
-        )
+    val teachersListState: StateFlow<TeachersListState> =
+        teachersRepository.getAllTeachersStream().map { TeachersListState(it) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = TeachersListState()
+            )
 
-    val locationsListState: StateFlow<LocationsListState> = locationsRepository.getAllLocationsStream().map { LocationsListState(it) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = LocationsListState()
-        )
+    val locationsListState: StateFlow<LocationsListState> =
+        locationsRepository.getAllLocationsStream().map { LocationsListState(it) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = LocationsListState()
+            )
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
@@ -62,15 +65,21 @@ class EventEntryViewModel(
 
     fun updateUiState(scheduleEventDetails: ScheduleEventDetails) {
         eventUiState =
-            ScheduleEventUiState(scheduleEventDetails = scheduleEventDetails, isEntryValid = validateInput(scheduleEventDetails))
+            ScheduleEventUiState(
+                scheduleEventDetails = scheduleEventDetails,
+                isEntryValid = validateInput(scheduleEventDetails)
+            )
     }
 
-    suspend fun saveScheduleEvent() {
-        if (validateInput()) {
+    suspend fun saveScheduleEvent(): Boolean {
+        return if (validateInput()) {
             subjectsRepository.insertSubject(eventUiState.scheduleEventDetails.subject)
             teachersRepository.insertTeacher(eventUiState.scheduleEventDetails.teacher)
             locationsRepository.insertLocation(eventUiState.scheduleEventDetails.location)
             scheduleEventsRepository.insertScheduleEvent(eventUiState.scheduleEventDetails.toScheduleEvent())
+            true
+        } else {
+            false
         }
     }
 
@@ -111,8 +120,9 @@ fun ScheduleEventDetails.toCustomSubject(): Subject {
     }
 
     return Subject(
-    shortenedCode = code,
-    fullDisplayName = name)
+        shortenedCode = code,
+        fullDisplayName = name
+    )
 
 }
 

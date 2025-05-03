@@ -57,13 +57,17 @@ class EventEditViewModel(
             ScheduleEventUiState(scheduleEventDetails = scheduleEventDetails, isEntryValid = validateInput(scheduleEventDetails))
     }
 
-    suspend fun saveScheduleEventEdits() {
-        if (validateInput(scheduleEventUiState.scheduleEventDetails)) {
+    suspend fun saveScheduleEventEdits() : Boolean {
+        return if (validateInput(scheduleEventUiState.scheduleEventDetails)) {
             subjectsRepository.insertSubject(scheduleEventUiState.scheduleEventDetails.subject)
             teachersRepository.insertTeacher(scheduleEventUiState.scheduleEventDetails.teacher)
             locationsRepository.insertLocation(scheduleEventUiState.scheduleEventDetails.location)
             scheduleEventsRepository.updateScheduleEvent(scheduleEventUiState.scheduleEventDetails.toScheduleEvent())
+            true
+        } else {
+            false
         }
+
     }
 
     suspend fun removeScheduleEvent() {

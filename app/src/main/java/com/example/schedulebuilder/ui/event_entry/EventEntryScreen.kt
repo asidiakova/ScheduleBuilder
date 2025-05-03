@@ -61,6 +61,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.schedulebuilder.ui.event_edit.AlertDialogExample
 
 object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
@@ -70,6 +71,7 @@ object EventEntryDestination : NavDestination {
 @Composable
 fun EventEntryDialog(
     onDismissRequest: () -> Unit,
+    navigateBack: () -> Unit,
     viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -77,6 +79,8 @@ fun EventEntryDialog(
     val teachersListState by viewModel.teachersListState.collectAsState()
     val locationsListState by viewModel.locationsListState.collectAsState()
     val eventUiState = viewModel.eventUiState
+
+    val openSanityCheckDialog = remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -98,10 +102,27 @@ fun EventEntryDialog(
                 onUpdateUiState = viewModel::updateUiState,
                 onSaveEvent = {
                     coroutineScope.launch {
-                        viewModel.saveScheduleEvent()
-                        onDismissRequest()
+                        val success = viewModel.saveScheduleEvent()
+                        if (success)
+                        {
+                            navigateBack()
+                        }
+                        else {
+                            openSanityCheckDialog.value = true
+                        }
                     }
-                }
+                },
+            )
+        }
+
+        if (openSanityCheckDialog.value) {
+            AlertDialogExample(
+                onDismissRequest = { openSanityCheckDialog.value = false },
+                onConfirmation = {
+                    openSanityCheckDialog.value = false
+                },
+                dialogTitle = "Entry is invalid",
+                dialogText = "Please make sure you have filled out all the necessary fields",
             )
         }
     }
@@ -129,7 +150,8 @@ fun EventEntryDialogContent(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSaveEvent) {
+                    TextButton(onClick = onSaveEvent,
+                        enabled = eventUiState.isEntryValid) {
                         Text("Save")
                     }
                 }
@@ -206,6 +228,7 @@ fun EventEntryScreen(
         onDismissRequest = {
             openAlertDialog.value = true
         },
+        navigateBack = navigateBack,
         viewModel = viewModel
     )
 
@@ -515,6 +538,8 @@ fun TimeSelection(
     modifier: Modifier = Modifier
 ) {
 
+    val isTimeValid = scheduleEventDetails.startHour < scheduleEventDetails.endHour
+
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceBetween) {
         HourSelection(
             scheduleEventDetails = scheduleEventDetails,
@@ -527,6 +552,14 @@ fun TimeSelection(
             isStartHour = false,
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f)
+        )
+    }
+
+    if (!isTimeValid) {
+        Text(
+            "End time must be after start time",
+            color = Color.Red,
+            modifier = Modifier.padding(top = 4.dp)
         )
     }
 

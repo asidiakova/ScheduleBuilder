@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -128,11 +129,12 @@ fun EventEditDialog(
     viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
     coroutineScope: CoroutineScope
 ) {
-//    val coroutineScope = rememberCoroutineScope()
     val predefinedSubjectsState by viewModel.predefinedSubjectsState.collectAsState()
     val teachersListState by viewModel.teachersListState.collectAsState()
     val locationsListState by viewModel.locationsListState.collectAsState()
     val eventUiState = viewModel.scheduleEventUiState
+
+    val openSanityCheckDialog = remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -154,13 +156,29 @@ fun EventEditDialog(
                 onUpdateUiState = viewModel::updateUiState,
                 onSaveEvent = {
                     coroutineScope.launch {
-                        viewModel.saveScheduleEventEdits()
-                        navigateBack()
+                        val success = viewModel.saveScheduleEventEdits()
+                        if (success)
+                        {
+                            navigateBack()
+                        }
+                        else {
+                            openSanityCheckDialog.value = true
+                        }
                     }
                 },
                 onRemoveEvent =
                     onRemoveEventRequest
+            )
+        }
 
+        if (openSanityCheckDialog.value) {
+            AlertDialogExample(
+                onDismissRequest = { openSanityCheckDialog.value = false },
+                onConfirmation = {
+                    openSanityCheckDialog.value = false
+                },
+                dialogTitle = "Entry is invalid",
+                dialogText = "Please make sure you have filled out all the necessary fields",
             )
         }
     }
@@ -225,8 +243,14 @@ fun AlertDialogExample(
     onConfirmation: () -> Unit,
     dialogTitle: String,
     dialogText: String,
+    icon: ImageVector? = null
 ) {
     AlertDialog(
+        icon = {
+            if (icon != null) {
+                Icon(icon, contentDescription = "Dialog Icon")
+            }
+        },
         title = {
             Text(text = dialogTitle)
         },
