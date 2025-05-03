@@ -19,6 +19,9 @@ interface ScheduleEventDao {
     @Delete
     suspend fun delete(scheduleEvent: ScheduleEvent)
 
+    @Query("DELETE FROM schedule_events")
+    suspend fun deleteAll()
+
     @Query("SELECT * from schedule_events WHERE id = :id")
     fun getScheduleEvent(id: Int): Flow<ScheduleEvent>
 

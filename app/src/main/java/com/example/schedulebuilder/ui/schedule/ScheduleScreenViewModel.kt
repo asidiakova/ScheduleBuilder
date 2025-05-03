@@ -4,12 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.schedulebuilder.data.FullScheduleEvent
 import com.example.schedulebuilder.data.ScheduleEventsRepositoryInterface
+import com.example.schedulebuilder.ui.event_edit.toScheduleEvent
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class ScheduleScreenViewModel(scheduleEventsRepository: ScheduleEventsRepositoryInterface) : ViewModel() {
+class ScheduleScreenViewModel(private val scheduleEventsRepository: ScheduleEventsRepositoryInterface) : ViewModel() {
 
     val scheduleUiState: StateFlow<ScheduleUiState> = scheduleEventsRepository.getAllFullScheduleEventsStream().map { ScheduleUiState(it) }
         .stateIn(
@@ -20,6 +21,10 @@ class ScheduleScreenViewModel(scheduleEventsRepository: ScheduleEventsRepository
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
+    }
+
+    suspend fun clearSchedule() {
+        scheduleEventsRepository.deleteAllEvents()
     }
 }
 

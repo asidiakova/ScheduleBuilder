@@ -4,6 +4,7 @@ package com.example.schedulebuilder.ui.schedule
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -16,12 +17,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,21 +36,26 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -60,7 +70,9 @@ import com.example.schedulebuilder.R
 import com.example.schedulebuilder.data.FullScheduleEvent
 import com.example.schedulebuilder.data.Obligation
 import com.example.schedulebuilder.ui.AppViewModelProvider
+import com.example.schedulebuilder.ui.event_edit.AlertDialogExample
 import com.example.schedulebuilder.ui.navigation.NavDestination
+import kotlinx.coroutines.launch
 
 //TODO: animations when click on event https://m3.material.io/styles/motion/transitions/transition-patterns#b67cba74-6240-4663-a423-d537b6d21187
 
@@ -74,7 +86,6 @@ const val TIMESLOTS_COUNT = 13
 
 @Composable
 fun ScheduleScreen(
-    editSchedule: () -> Unit,
     addEvent: () -> Unit,
     onClickEdit: (Int) -> Unit,
     viewModel: ScheduleScreenViewModel = viewModel(factory = AppViewModelProvider.Factory)
@@ -85,6 +96,13 @@ fun ScheduleScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     var selectedEvent by remember { mutableStateOf<FullScheduleEvent?>(null) }
+
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    val openAlertDialog = remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -116,7 +134,7 @@ fun ScheduleScreen(
         },
         bottomBar = {
             BottomAppBar(containerColor = colorResource(R.color.uniza_light), actions = {
-                IconButton(onClick = editSchedule) {
+                IconButton(onClick = {showBottomSheet = true}) {
                     Icon(
                         Icons.Filled.Edit,
                         contentDescription = "Localized description",
@@ -160,6 +178,33 @@ fun ScheduleScreen(
                 )
             }
         }
+    }
+
+    if (showBottomSheet) {
+        EditScheduleBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = sheetState,
+            onAddEvent = addEvent,
+            onClearSchedule = {
+                openAlertDialog.value = true
+            },
+        )
+    }
+
+    if (openAlertDialog.value) {
+        AlertDialogExample(
+            onDismissRequest = { openAlertDialog.value = false },
+            onConfirmation = {
+                openAlertDialog.value = false
+                coroutineScope.launch  {
+                    viewModel.clearSchedule()
+                    showBottomSheet = false
+                }
+            },
+            dialogTitle = "Clear schedule",
+            dialogText = "Are you sure you want to delete all events?",
+            icon = Icons.Default.Warning
+        )
     }
 
 
@@ -444,5 +489,83 @@ fun EventDetailsDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EditScheduleBottomSheet(
+    onDismissRequest: () -> Unit,
+    sheetState: SheetState,
+    onAddEvent: () -> Unit,
+    onClearSchedule: () -> Unit,
+) {
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            BottomSheetActionItem(
+                icon = Icons.Default.Add,
+                label = "Add subject",
+                onClick = onAddEvent
+            )
+
+            BottomSheetActionItem(
+                icon = Icons.Default.Delete,
+                label = "Clear Schedule",
+                onClick = onClearSchedule
+            )
+
+            BottomSheetActionItem(
+                icon = Icons.Default.Close,
+                label = "Cancel",
+                onClick = onDismissRequest
+            )
+        }
+
+    }
+}
+
+@Composable
+fun BottomSheetActionItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Transparent)
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFFDDE3FF), shape = RoundedCornerShape(50))
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color(0xFF2F3E7C)
+            )
+        }
+        Text(
+            text = label,
+            color = Color(0xFF2F3E7C),
+            fontSize = 16.sp,
+            modifier = Modifier.padding(start = 16.dp)
+        )
     }
 }

@@ -7,6 +7,8 @@ class ScheduleEventsRepository(private val scheduleEventDao: ScheduleEventDao) :
 
     override suspend fun deleteScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.delete(scheduleEvent)
 
+    override suspend fun deleteAllEvents() = scheduleEventDao.deleteAll()
+
     override suspend fun updateScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.update(scheduleEvent)
 
     override fun getScheduleEventStream(id: Int): Flow<ScheduleEvent?> = scheduleEventDao.getScheduleEvent(id)

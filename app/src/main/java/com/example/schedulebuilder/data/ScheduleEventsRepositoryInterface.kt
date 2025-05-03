@@ -7,6 +7,8 @@ interface ScheduleEventsRepositoryInterface {
 
     suspend fun deleteScheduleEvent(scheduleEvent: ScheduleEvent)
 
+    suspend fun deleteAllEvents()
+
     suspend fun updateScheduleEvent(scheduleEvent: ScheduleEvent)
 
     fun getScheduleEventStream(id: Int): Flow<ScheduleEvent?>
