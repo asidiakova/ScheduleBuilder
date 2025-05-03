@@ -46,9 +46,6 @@ class EventEditViewModel(
         }
     }
 
-
-
-
     private fun validateInput(uiState: ScheduleEventDetails): Boolean {
         return with(uiState) {
             subject.shortenedCode.isNotBlank() && teacher.teacherName.isNotBlank() && location.roomCode.isNotBlank() && startHour >= 7 && endHour <= 20 && startHour < endHour
@@ -67,6 +64,10 @@ class EventEditViewModel(
             locationsRepository.insertLocation(scheduleEventUiState.scheduleEventDetails.location)
             scheduleEventsRepository.updateScheduleEvent(scheduleEventUiState.scheduleEventDetails.toScheduleEvent())
         }
+    }
+
+    suspend fun removeScheduleEvent() {
+        scheduleEventsRepository.deleteScheduleEvent(scheduleEventUiState.scheduleEventDetails.toScheduleEvent())
     }
 
 

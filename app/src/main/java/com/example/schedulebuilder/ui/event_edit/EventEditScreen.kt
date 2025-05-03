@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,6 +61,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.CoroutineScope
 
 object EventEditDestination : NavDestination {
     override val route = "edit_schedule_event"
@@ -73,25 +75,47 @@ fun EventEditScreen(
     navigateBack: () -> Unit,
     viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val openAlertDialog = remember { mutableStateOf(false) }
+    val openDismissDialog = remember { mutableStateOf(false) }
+    val openRemoveEventDialog = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     EventEditDialog(
         onDismissRequest = {
-            openAlertDialog.value = true
+            openDismissDialog.value = true
+        },
+        onRemoveEventRequest = {
+            openRemoveEventDialog.value = true
         },
         navigateBack = navigateBack,
-        viewModel = viewModel
+        viewModel = viewModel,
+        coroutineScope = coroutineScope
     )
 
-    if (openAlertDialog.value) {
+    if (openDismissDialog.value) {
         AlertDialogExample(
-            onDismissRequest = { openAlertDialog.value = false },
+            onDismissRequest = { openDismissDialog.value = false },
             onConfirmation = {
-                openAlertDialog.value = false
+                openDismissDialog.value = false
                 navigateBack()
             },
             dialogTitle = "Discard changes?",
             dialogText = "Are you sure you want to discard your changes and close the window?",
+        )
+    }
+
+    if (openRemoveEventDialog.value) {
+        AlertDialogExample(
+            onDismissRequest = { openRemoveEventDialog.value = false },
+            onConfirmation = {
+                openRemoveEventDialog.value = false
+                coroutineScope.launch {
+                    viewModel.removeScheduleEvent()
+                    navigateBack()
+                }
+                navigateBack()
+            },
+            dialogTitle = "Remove event?",
+            dialogText = "Are you sure you want to remove this event?",
         )
     }
 }
@@ -99,10 +123,12 @@ fun EventEditScreen(
 @Composable
 fun EventEditDialog(
     onDismissRequest: () -> Unit,
+    onRemoveEventRequest: () -> Unit,
     navigateBack: () -> Unit,
     viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    coroutineScope: CoroutineScope
 ) {
-    val coroutineScope = rememberCoroutineScope()
+//    val coroutineScope = rememberCoroutineScope()
     val predefinedSubjectsState by viewModel.predefinedSubjectsState.collectAsState()
     val teachersListState by viewModel.teachersListState.collectAsState()
     val locationsListState by viewModel.locationsListState.collectAsState()
@@ -131,7 +157,10 @@ fun EventEditDialog(
                         viewModel.saveScheduleEventEdits()
                         navigateBack()
                     }
-                }
+                },
+                onRemoveEvent =
+                    onRemoveEventRequest
+
             )
         }
     }
@@ -145,7 +174,8 @@ fun EventEditDialogContent(
     locationsListState: LocationsListState,
     eventUiState: ScheduleEventUiState,
     onUpdateUiState: (ScheduleEventDetails) -> Unit,
-    onSaveEvent: () -> Unit
+    onSaveEvent: () -> Unit,
+    onRemoveEvent: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -159,7 +189,8 @@ fun EventEditDialogContent(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSaveEvent) {
+                    TextButton(onClick = onSaveEvent,
+                        enabled = eventUiState.isEntryValid) {
                         Text("Save")
                     }
                 }
@@ -179,6 +210,7 @@ fun EventEditDialogContent(
                 locationsListState = locationsListState,
                 eventUiState = eventUiState,
                 onScheduleEventValueChange = onUpdateUiState,
+                onRemoveEvent = onRemoveEvent
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -233,6 +265,7 @@ fun ScheduleEventEntryForm(
     locationsListState: LocationsListState,
     eventUiState: ScheduleEventUiState,
     onScheduleEventValueChange: (ScheduleEventDetails) -> Unit,
+    onRemoveEvent: () -> Unit
 ) {
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -296,6 +329,9 @@ fun ScheduleEventEntryForm(
 
     Spacer(modifier = Modifier.height(24.dp))
 
+
+
+    RemoveEventButton(onRemoveEvent = onRemoveEvent)
 
 }
 
@@ -517,6 +553,7 @@ fun TimeSelection(
     onValueChange: (ScheduleEventDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isTimeValid = scheduleEventDetails.startHour < scheduleEventDetails.endHour
 
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceBetween) {
         HourSelection(
@@ -530,6 +567,14 @@ fun TimeSelection(
             isStartHour = false,
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f)
+        )
+    }
+
+    if (!isTimeValid) {
+        Text(
+            "End time must be after start time",
+            color = Color.Red,
+            modifier = Modifier.padding(top = 4.dp)
         )
     }
 
@@ -617,6 +662,23 @@ fun RadioButtonObligationSelection(
             }
         }
     }
+}
+
+@Composable
+fun RemoveEventButton(
+    onRemoveEvent: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TextButton (
+        colors = ButtonColors( containerColor = Color.Red,
+            contentColor = Color.Black,
+            disabledContainerColor = Color.Red,
+            disabledContentColor = Color.Black),
+        onClick = onRemoveEvent,
+    ) {
+        Text("Remove event")
+    }
+
 }
 
 @Preview(showBackground = true)
