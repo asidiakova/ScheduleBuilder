@@ -629,7 +629,6 @@ fun HourSelection(
             ) {
                 hours.forEach { hour ->
                     DropdownMenuItem(text = { Text("$hour:00") }, onClick = {
-
                         if (isStartHour) {
                             onValueChange(scheduleEventDetails.copy(startHour = hour))
                         } else {

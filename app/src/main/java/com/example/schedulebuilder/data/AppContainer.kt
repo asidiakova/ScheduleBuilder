@@ -12,7 +12,7 @@ interface AppContainer {
 class AppDataContainer(private val context: Context) : AppContainer {
 
     override val scheduleEventsRepository: ScheduleEventsRepositoryInterface by lazy {
-        ScheduleEventsRepository(ScheduleDatabase.getDatabase(context).scheduleEventDao())
+        ScheduleEventsRepository(ScheduleDatabase.getDatabase(context).scheduleEventDao(), context)
     }
 
     override val subjectsRepository: SubjectsRepositoryInterface by lazy {

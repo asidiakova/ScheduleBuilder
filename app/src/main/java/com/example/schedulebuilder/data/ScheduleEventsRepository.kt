@@ -1,21 +1,42 @@
 package com.example.schedulebuilder.data
 
+import android.content.Context
+import com.example.schedulebuilder.glance.updateScheduleWidget
 import kotlinx.coroutines.flow.Flow
 
-class ScheduleEventsRepository(private val scheduleEventDao: ScheduleEventDao) : ScheduleEventsRepositoryInterface {
-    override suspend fun insertScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.insert(scheduleEvent)
+class ScheduleEventsRepository(
+    private val scheduleEventDao: ScheduleEventDao,
+    private val context: Context
+) : ScheduleEventsRepositoryInterface {
+    override suspend fun insertScheduleEvent(scheduleEvent: ScheduleEvent) {
+        scheduleEventDao.insert(scheduleEvent)
+        updateScheduleWidget(context)
+    }
 
-    override suspend fun deleteScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.delete(scheduleEvent)
+    override suspend fun deleteScheduleEvent(scheduleEvent: ScheduleEvent) {
+        scheduleEventDao.delete(scheduleEvent)
+        updateScheduleWidget(context)
+    }
 
-    override suspend fun deleteAllEvents() = scheduleEventDao.deleteAll()
+    override suspend fun deleteAllEvents() {
+        scheduleEventDao.deleteAll()
+        updateScheduleWidget(context)
+    }
 
-    override suspend fun updateScheduleEvent(scheduleEvent: ScheduleEvent) = scheduleEventDao.update(scheduleEvent)
+    override suspend fun updateScheduleEvent(scheduleEvent: ScheduleEvent) {
+        scheduleEventDao.update(scheduleEvent)
+        updateScheduleWidget(context)
+    }
 
-    override fun getScheduleEventStream(id: Int): Flow<ScheduleEvent?> = scheduleEventDao.getScheduleEvent(id)
+    override fun getScheduleEventStream(id: Int): Flow<ScheduleEvent?> =
+        scheduleEventDao.getScheduleEvent(id)
 
-    override fun getFullScheduleEventStream(id: Int): Flow<FullScheduleEvent?> = scheduleEventDao.getFullScheduleEvent(id)
+    override fun getFullScheduleEventStream(id: Int): Flow<FullScheduleEvent?> =
+        scheduleEventDao.getFullScheduleEvent(id)
 
-    override fun getAllScheduleEventsStream(): Flow<List<ScheduleEvent>> = scheduleEventDao.getAllScheduleEvents()
+    override fun getAllScheduleEventsStream(): Flow<List<ScheduleEvent>> =
+        scheduleEventDao.getAllScheduleEvents()
 
-    override fun getAllFullScheduleEventsStream(): Flow<List<FullScheduleEvent>>  = scheduleEventDao.getAllFullScheduleEvents()
+    override fun getAllFullScheduleEventsStream(): Flow<List<FullScheduleEvent>> =
+        scheduleEventDao.getAllFullScheduleEvents()
 }
