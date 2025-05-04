@@ -2,8 +2,6 @@
 
 package com.example.schedulebuilder.ui.event_entry
 
-//TODO: sanity check https://m3.material.io/components/dialogs/guidelines#4751e908-c6f9-44a3-90c1-73f5e653b067
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,37 +13,44 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,7 +62,6 @@ import com.example.schedulebuilder.data.Teacher
 import com.example.schedulebuilder.ui.AppViewModelProvider
 import com.example.schedulebuilder.ui.navigation.NavDestination
 import kotlinx.coroutines.launch
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
@@ -217,15 +221,8 @@ fun ScheduleEventEntryForm(
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    PredefinedSubjectSelection(
+    SubjectSelection(
         predefinedSubjects = predefinedSubjectsState.subjectsList,
-        scheduleEventDetails = eventUiState.scheduleEventDetails,
-        onValueChange = onScheduleEventValueChange
-    )
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    CustomSubjectTextField(
         scheduleEventDetails = eventUiState.scheduleEventDetails,
         onValueChange = onScheduleEventValueChange
     )
@@ -274,89 +271,89 @@ fun ScheduleEventEntryForm(
 }
 
 @Composable
-fun PredefinedSubjectSelection(
+fun SubjectSelection(
     predefinedSubjects: List<Subject>,
     scheduleEventDetails: ScheduleEventDetails,
     onValueChange: (ScheduleEventDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var subjectsDropdownExpanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf(scheduleEventDetails.subject.fullDisplayName) }
+    var selectedSubject by remember { mutableStateOf<Subject?>(null) }
+    val focusManager = LocalFocusManager.current
 
-    Text("Select from predefined")
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = if (scheduleEventDetails.subject.shortenedCode.isEmpty())
-                "Select a subject..."
-            else
-                "${scheduleEventDetails.subject.fullDisplayName} (${scheduleEventDetails.subject.shortenedCode})",
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { subjectsDropdownExpanded = true })
+    val filteredSubjects = remember(query, predefinedSubjects) {
+        if (query.isBlank()) predefinedSubjects
+        else predefinedSubjects.filter {
+            it.fullDisplayName.contains(query, ignoreCase = true) ||
+                    it.shortenedCode.contains(query, ignoreCase = true)
+        }
+    }
 
-        Spacer(
+    LaunchedEffect(selectedSubject) {
+        selectedSubject?.let {
+            query = it.fullDisplayName
+            onValueChange(scheduleEventDetails.copy(subject = it))
+        }
+    }
+
+    Text("Select a subject")
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier.fillMaxWidth()
+    ) {
+        TextField(
+            value = query,
+            onValueChange = {
+                query = it
+                expanded = true
+                val matched = predefinedSubjects.find { subj ->
+                    subj.fullDisplayName.equals(it, ignoreCase = true)
+                }
+                if (matched != null) {
+                    selectedSubject = matched
+                } else {
+                    val customSubject = (scheduleEventDetails.subject.copy(fullDisplayName = it))
+                    onValueChange(scheduleEventDetails.copy(subject = scheduleEventDetails.copy(subject =  customSubject).toCustomSubject()))
+                }
+            },
+            label = { Text("Subject") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+            },
             modifier = Modifier
-                .matchParentSize()
-                .clickable { subjectsDropdownExpanded = true }
-                .background(Color.Transparent)
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
+                .fillMaxWidth(),
+            singleLine = true
         )
 
-        DropdownMenu(
-            expanded = subjectsDropdownExpanded,
-            onDismissRequest = { subjectsDropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            predefinedSubjects.forEach { subject ->
+            if (filteredSubjects.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text(subject.fullDisplayName + " (" + subject.shortenedCode + ")") },
-                    onClick = {
-                        onValueChange(scheduleEventDetails.copy(subject = subject))
-                        subjectsDropdownExpanded = false
-                    })
+                    text = { Text("No matching subjects") },
+                    onClick = {},
+                    enabled = false
+                )
+            } else {
+                LazyColumn (modifier = Modifier.height(50.dp * filteredSubjects.size.coerceAtMost(5)).width(500.dp)) {
+                    items(filteredSubjects.size) { subject ->
+                        DropdownMenuItem(
+                            text = { Text("${filteredSubjects[subject].fullDisplayName} (${filteredSubjects[subject].shortenedCode})") },
+                            onClick = {
+                                expanded = false
+                                selectedSubject = filteredSubjects[subject]
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
-}
-
-@Composable
-fun CustomSubjectTextField(
-    scheduleEventDetails: ScheduleEventDetails,
-    onValueChange: (ScheduleEventDetails) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var customSubjectName by remember {
-        mutableStateOf(
-            if (scheduleEventDetails.isCustomSubject)
-                scheduleEventDetails.subject.fullDisplayName
-            else
-                ""
-        )
-    }
-
-    Text("Subject title")
-    OutlinedTextField(
-        value = customSubjectName,
-        onValueChange = { newValue ->
-            customSubjectName = newValue
-
-            if (scheduleEventDetails.isCustomSubject || customSubjectName.isNotEmpty()) {
-                val tempSubject = Subject(shortenedCode = "", fullDisplayName = newValue)
-                val updatedSubject =
-                    scheduleEventDetails.copy(subject = tempSubject).toCustomSubject()
-                onValueChange(scheduleEventDetails.copy(subject = updatedSubject))
-            }
-        },
-        keyboardOptions = KeyboardOptions.Default.copy(
-            autoCorrectEnabled = false,
-            imeAction = ImeAction.Done
-        ),
-        singleLine = true,
-        enabled = true,
-        placeholder = { Text("Enter custom subject name") },
-        modifier = Modifier.fillMaxWidth(1f)
-    )
 }
 
 @Composable
@@ -366,35 +363,62 @@ fun TeacherSelection(
     onValueChange: (ScheduleEventDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var teachersDropdownExpanded by remember { mutableStateOf(false) }
-    Text("Teacher")
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = scheduleEventDetails.teacher.teacherName,
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { teachersDropdownExpanded = true })
+    var expanded by remember { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
-        Spacer(
+    val filteredTeachers = remember(query, teachersList) {
+        teachersList.filter {
+            it.teacherName.contains(query, ignoreCase = true)
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        TextField(
+            value = query,
+            onValueChange = {
+                query = it
+                expanded = true
+            },
+            label = { Text("Select teacher") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            singleLine = true,
             modifier = Modifier
-                .matchParentSize()
-                .clickable { teachersDropdownExpanded = true }
-                .background(Color.Transparent)
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
+                .fillMaxWidth()
         )
 
-        DropdownMenu(
-            expanded = teachersDropdownExpanded,
-            onDismissRequest = { teachersDropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            teachersList.forEach { teacher ->
-                DropdownMenuItem(text = { Text(teacher.teacherName) }, onClick = {
-                    onValueChange(scheduleEventDetails.copy(teacher = teacher))
-                    teachersDropdownExpanded = false
-                })
+            if (filteredTeachers.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("No matching teachers") },
+                    onClick = {},
+                    enabled = false
+                )
+            } else {
+                LazyColumn (modifier = Modifier.height(50.dp * filteredTeachers.size.coerceAtMost(5)).width(500.dp)) {
+                    items(filteredTeachers.size) { index ->
+                        val teacher = filteredTeachers[index]
+                        DropdownMenuItem(
+                            text = { Text(teacher.teacherName) },
+                            onClick = {
+                                expanded = false
+                                onValueChange(scheduleEventDetails.copy(teacher = teacher))
+                                query = teacher.teacherName
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -407,36 +431,61 @@ fun LocationSelection(
     onValueChange: (ScheduleEventDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var locationDropdownExpanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
-    Text("Room")
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = scheduleEventDetails.location.roomCode,
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
+    val filteredLocations = remember(query, locationsList) {
+        locationsList.filter {
+            it.roomCode.contains(query, ignoreCase = true)
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        TextField(
+            value = query,
+            onValueChange = {
+                query = it
+                expanded = true
+            },
+            label = { Text("Select location") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            singleLine = true,
             modifier = Modifier
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
                 .fillMaxWidth()
-                .clickable { locationDropdownExpanded = true })
-
-        Spacer(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { locationDropdownExpanded = true }
-                .background(Color.Transparent)
         )
 
-        DropdownMenu(
-            expanded = locationDropdownExpanded,
-            onDismissRequest = { locationDropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            locationsList.forEach { location ->
-                DropdownMenuItem(text = { Text(location.roomCode) }, onClick = {
-                    onValueChange(scheduleEventDetails.copy(location = location))
-                    locationDropdownExpanded = false
-                })
+            if (filteredLocations.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("No matching locations") },
+                    onClick = {},
+                    enabled = false
+                )
+            } else {
+                LazyColumn (modifier = Modifier.height(50.dp * filteredLocations.size.coerceAtMost(5)).width(500.dp)) {
+                    items(filteredLocations.size) { location ->
+                        DropdownMenuItem(
+                            text = { Text(filteredLocations[location].roomCode) },
+                            onClick = {
+                                expanded = false
+                                onValueChange(scheduleEventDetails.copy(location = filteredLocations[location]))
+                                query = filteredLocations[location].roomCode
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
