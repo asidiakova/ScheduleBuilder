@@ -14,9 +14,10 @@ import com.example.schedulebuilder.data.Subject
 import com.example.schedulebuilder.data.SubjectsRepositoryInterface
 import com.example.schedulebuilder.data.Teacher
 import com.example.schedulebuilder.data.TeachersRepositoryInterface
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class EventEntryViewModel(
@@ -26,32 +27,60 @@ class EventEntryViewModel(
     private val locationsRepository: LocationsRepositoryInterface
 ) : ViewModel() {
 
-    val predefinedSubjectsState: StateFlow<PredefinedSubjectsState> =
-        subjectsRepository.getAllSubjectsStream().map { PredefinedSubjectsState(it) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = PredefinedSubjectsState()
-            )
-
-    val teachersListState: StateFlow<TeachersListState> =
-        teachersRepository.getAllTeachersStream().map { TeachersListState(it) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = TeachersListState()
-            )
-
-    val locationsListState: StateFlow<LocationsListState> =
-        locationsRepository.getAllLocationsStream().map { LocationsListState(it) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = LocationsListState()
-            )
-
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
+    }
+
+    private val allSubjectsStream = subjectsRepository.getAllSubjectsStream()
+    private val allTeachersStream = teachersRepository.getAllTeachersStream()
+    private val allLocationsStream = locationsRepository.getAllLocationsStream()
+
+    private val _subjectQuery = MutableStateFlow("")
+    private val _teacherQuery = MutableStateFlow("")
+    private val _locationQuery = MutableStateFlow("")
+
+    val filteredSubjectsState: StateFlow<PredefinedSubjectsState> =
+//        source: https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/combine.html
+        allSubjectsStream.combine(_subjectQuery) { subjects, query ->
+            PredefinedSubjectsState(subjects.filter {
+                it.fullDisplayName.contains(
+                    query, ignoreCase = true
+                )
+            })
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = PredefinedSubjectsState()
+        )
+
+    val filteredTeachersState: StateFlow<TeachersListState> =
+        allTeachersStream.combine(_teacherQuery) { teachers, query ->
+            TeachersListState(teachers.filter { it.teacherName.contains(query, ignoreCase = true) })
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = TeachersListState()
+        )
+
+    val filteredLocationsState: StateFlow<LocationsListState> =
+        allLocationsStream.combine(_locationQuery) { locations, query ->
+            LocationsListState(locations.filter { it.roomCode.contains(query, ignoreCase = true) })
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = LocationsListState()
+        )
+
+    fun updateSubjectQuery(query: String) {
+        _subjectQuery.value = query
+    }
+
+    fun updateTeacherQuery(query: String) {
+        _teacherQuery.value = query
+    }
+
+    fun updateLocationQuery(query: String) {
+        _locationQuery.value = query
     }
 
     var eventUiState by mutableStateOf(ScheduleEventUiState())
@@ -64,22 +93,18 @@ class EventEntryViewModel(
     }
 
     fun updateUiState(scheduleEventDetails: ScheduleEventDetails) {
-        eventUiState =
-            ScheduleEventUiState(
-                scheduleEventDetails = scheduleEventDetails,
-                isEntryValid = validateInput(scheduleEventDetails)
-            )
+        eventUiState = ScheduleEventUiState(
+            scheduleEventDetails = scheduleEventDetails,
+            isEntryValid = validateInput(scheduleEventDetails)
+        )
     }
 
-    suspend fun saveScheduleEvent(): Boolean {
-        return if (validateInput()) {
+    suspend fun saveScheduleEvent() {
+        if (validateInput()) {
             subjectsRepository.insertSubject(eventUiState.scheduleEventDetails.subject)
             teachersRepository.insertTeacher(eventUiState.scheduleEventDetails.teacher)
             locationsRepository.insertLocation(eventUiState.scheduleEventDetails.location)
             scheduleEventsRepository.insertScheduleEvent(eventUiState.scheduleEventDetails.toScheduleEvent())
-            true
-        } else {
-            false
         }
     }
 
@@ -120,10 +145,8 @@ fun ScheduleEventDetails.toCustomSubject(): Subject {
     }
 
     return Subject(
-        shortenedCode = code,
-        fullDisplayName = name
+        shortenedCode = code, fullDisplayName = name
     )
-
 }
 
 

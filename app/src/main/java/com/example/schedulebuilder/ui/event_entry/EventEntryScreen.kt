@@ -65,135 +65,26 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
+import kotlinx.coroutines.CoroutineScope
 
 object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
     override val titleRes = R.string.app_name
 }
 
-@Composable
-fun EventEntryDialog(
-    onDismissRequest: () -> Unit,
-    navigateBack: () -> Unit,
-    viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val predefinedSubjectsState by viewModel.predefinedSubjectsState.collectAsState()
-    val teachersListState by viewModel.teachersListState.collectAsState()
-    val locationsListState by viewModel.locationsListState.collectAsState()
-    val eventUiState = viewModel.eventUiState
-
-    val openSanityCheckDialog = remember { mutableStateOf(false) }
-
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false
-        )
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            EventEntryDialogContent(
-                navigateBack = onDismissRequest,
-                predefinedSubjectsState = predefinedSubjectsState,
-                teachersListState = teachersListState,
-                locationsListState = locationsListState,
-                eventUiState = eventUiState,
-                onUpdateUiState = viewModel::updateUiState,
-                onSaveEvent = {
-                    coroutineScope.launch {
-                        val success = viewModel.saveScheduleEvent()
-                        if (success)
-                        {
-                            navigateBack()
-                        }
-                        else {
-                            openSanityCheckDialog.value = true
-                        }
-                    }
-                },
-            )
-        }
-
-        if (openSanityCheckDialog.value) {
-            ConfirmationDialog(
-                onDismissRequest = { openSanityCheckDialog.value = false },
-                onConfirmation = {
-                    openSanityCheckDialog.value = false
-                },
-                dialogTitle = "Entry is invalid",
-                dialogText = "Please make sure you have filled out all the necessary fields",
-            )
-        }
-    }
-}
-
-@Composable
-fun EventEntryDialogContent(
-    navigateBack: () -> Unit,
-    predefinedSubjectsState: PredefinedSubjectsState,
-    teachersListState: TeachersListState,
-    locationsListState: LocationsListState,
-    eventUiState: ScheduleEventUiState,
-    onUpdateUiState: (ScheduleEventDetails) -> Unit,
-    onSaveEvent: () -> Unit
-) {
-    val scrollState = rememberScrollState()
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add Subject") },
-                navigationIcon = {
-                    IconButton(onClick = navigateBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = onSaveEvent,
-                        enabled = eventUiState.isEntryValid) {
-                        Text("Save")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            ScheduleEventEntryForm(
-                predefinedSubjectsState = predefinedSubjectsState,
-                teachersListState = teachersListState,
-                locationsListState = locationsListState,
-                eventUiState = eventUiState,
-                onScheduleEventValueChange = onUpdateUiState,
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
 
 @Composable
 fun EventEntryScreen(
     navigateBack: () -> Unit,
     viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val openAlertDialog = remember { mutableStateOf(false) }
 
     EventEntryDialog(
         onDismissRequest = {
             openAlertDialog.value = true
-        },
-        navigateBack = navigateBack,
-        viewModel = viewModel
+        }, navigateBack = navigateBack, viewModel = viewModel, coroutineScope = coroutineScope
     )
 
     if (openAlertDialog.value) {
@@ -207,14 +98,102 @@ fun EventEntryScreen(
             dialogText = "Are you sure you want to discard your changes and close the window?",
         )
     }
-
 }
+
+
+@Composable
+fun EventEntryDialog(
+    onDismissRequest: () -> Unit,
+    navigateBack: () -> Unit,
+    viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    coroutineScope: CoroutineScope
+) {
+
+    val eventUiState = viewModel.eventUiState
+
+    Dialog(
+        onDismissRequest = onDismissRequest, properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            EventEntryDialogContent(
+                navigateBack = onDismissRequest,
+                eventUiState = eventUiState,
+                onUpdateUiState = viewModel::updateUiState,
+                onSaveEvent = {
+                    coroutineScope.launch {
+                        viewModel.saveScheduleEvent()
+                        navigateBack()
+                    }
+                },
+                viewModel = viewModel
+            )
+        }
+    }
+}
+
+
+@Composable
+fun EventEntryDialogContent(
+    navigateBack: () -> Unit,
+    eventUiState: ScheduleEventUiState,
+    onUpdateUiState: (ScheduleEventDetails) -> Unit,
+    onSaveEvent: () -> Unit,
+    viewModel: EventEntryViewModel
+) {
+    val scrollState = rememberScrollState()
+
+    val filteredSubjectsState by viewModel.filteredSubjectsState.collectAsState()
+    val filteredTeachersState by viewModel.filteredTeachersState.collectAsState()
+    val filteredLocationsState by viewModel.filteredLocationsState.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Add Event") }, navigationIcon = {
+                IconButton(onClick = navigateBack) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }, actions = {
+                TextButton(
+                    onClick = onSaveEvent, enabled = eventUiState.isEntryValid
+                ) {
+                    Text("Save")
+                }
+            })
+        }) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            ScheduleEventEntryForm(
+                eventUiState = eventUiState,
+                onScheduleEventValueChange = onUpdateUiState,
+                viewModel = viewModel,
+                filteredSubjectsState = filteredSubjectsState,
+                filteredTeachersState = filteredTeachersState,
+                filteredLocationsState = filteredLocationsState
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
 
 @Composable
 fun ScheduleEventEntryForm(
-    predefinedSubjectsState: PredefinedSubjectsState,
-    teachersListState: TeachersListState,
-    locationsListState: LocationsListState,
+    viewModel: EventEntryViewModel,
+    filteredSubjectsState: PredefinedSubjectsState,
+    filteredTeachersState: TeachersListState,
+    filteredLocationsState: LocationsListState,
     eventUiState: ScheduleEventUiState,
     onScheduleEventValueChange: (ScheduleEventDetails) -> Unit,
 ) {
@@ -222,25 +201,28 @@ fun ScheduleEventEntryForm(
     Spacer(modifier = Modifier.height(16.dp))
 
     SubjectSelection(
-        predefinedSubjects = predefinedSubjectsState.subjectsList,
+        predefinedSubjects = filteredSubjectsState.subjectsList,
         scheduleEventDetails = eventUiState.scheduleEventDetails,
-        onValueChange = onScheduleEventValueChange
+        onValueChange = onScheduleEventValueChange,
+        onQueryChange = viewModel::updateSubjectQuery,
     )
 
     Spacer(modifier = Modifier.height(16.dp))
 
     TeacherSelection(
-        teachersList = teachersListState.teachersList,
+        teachersList = filteredTeachersState.teachersList,
         scheduleEventDetails = eventUiState.scheduleEventDetails,
-        onValueChange = onScheduleEventValueChange
+        onValueChange = onScheduleEventValueChange,
+        onQueryChange = viewModel::updateTeacherQuery
     )
 
     Spacer(modifier = Modifier.height(16.dp))
 
     LocationSelection(
-        locationsList = locationsListState.locationsList,
+        locationsList = filteredLocationsState.locationsList,
         scheduleEventDetails = eventUiState.scheduleEventDetails,
-        onValueChange = onScheduleEventValueChange
+        onValueChange = onScheduleEventValueChange,
+        onQueryChange = viewModel::updateLocationQuery
     )
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -270,25 +252,25 @@ fun ScheduleEventEntryForm(
     Spacer(modifier = Modifier.height(24.dp))
 }
 
+
 @Composable
 fun SubjectSelection(
     predefinedSubjects: List<Subject>,
     scheduleEventDetails: ScheduleEventDetails,
     onValueChange: (ScheduleEventDetails) -> Unit,
+    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf(scheduleEventDetails.subject.fullDisplayName) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var wasInitialized by rememberSaveable { mutableStateOf(false) }
+    if (!wasInitialized && scheduleEventDetails.subject.fullDisplayName.isNotBlank()) {
+        query = scheduleEventDetails.subject.fullDisplayName
+        wasInitialized = true
+    }
     var selectedSubject by remember { mutableStateOf<Subject?>(null) }
     val focusManager = LocalFocusManager.current
-
-    val filteredSubjects = remember(query, predefinedSubjects) {
-        if (query.isBlank()) predefinedSubjects
-        else predefinedSubjects.filter {
-            it.fullDisplayName.contains(query, ignoreCase = true) ||
-                    it.shortenedCode.contains(query, ignoreCase = true)
-        }
-    }
+    val filteredSubjects = predefinedSubjects
 
     LaunchedEffect(selectedSubject) {
         selectedSubject?.let {
@@ -307,6 +289,7 @@ fun SubjectSelection(
             value = query,
             onValueChange = {
                 query = it
+                onQueryChange(it)
                 expanded = true
                 val matched = predefinedSubjects.find { subj ->
                     subj.fullDisplayName.equals(it, ignoreCase = true)
@@ -315,7 +298,13 @@ fun SubjectSelection(
                     selectedSubject = matched
                 } else {
                     val customSubject = (scheduleEventDetails.subject.copy(fullDisplayName = it))
-                    onValueChange(scheduleEventDetails.copy(subject = scheduleEventDetails.copy(subject =  customSubject).toCustomSubject()))
+                    onValueChange(
+                        scheduleEventDetails.copy(
+                            subject = scheduleEventDetails.copy(
+                                subject = customSubject
+                            ).toCustomSubject()
+                        )
+                    )
                 }
             },
             label = { Text("Subject") },
@@ -329,9 +318,7 @@ fun SubjectSelection(
         )
 
         ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+            expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredSubjects.isEmpty()) {
                 DropdownMenuItem(
                     text = { Text("No matching subjects") },
@@ -339,7 +326,11 @@ fun SubjectSelection(
                     enabled = false
                 )
             } else {
-                LazyColumn (modifier = Modifier.height(50.dp * filteredSubjects.size.coerceAtMost(5)).width(500.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .height(50.dp * filteredSubjects.size.coerceAtMost(5))
+                        .width(500.dp)
+                ) {
                     items(filteredSubjects.size) { subject ->
                         DropdownMenuItem(
                             text = { Text("${filteredSubjects[subject].fullDisplayName} (${filteredSubjects[subject].shortenedCode})") },
@@ -347,8 +338,7 @@ fun SubjectSelection(
                                 expanded = false
                                 selectedSubject = filteredSubjects[subject]
                                 focusManager.clearFocus()
-                            }
-                        )
+                            })
                     }
                 }
             }
@@ -356,32 +346,33 @@ fun SubjectSelection(
     }
 }
 
+
 @Composable
 fun TeacherSelection(
     teachersList: List<Teacher>,
     scheduleEventDetails: ScheduleEventDetails,
     onValueChange: (ScheduleEventDetails) -> Unit,
+    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-
-    val filteredTeachers = remember(query, teachersList) {
-        teachersList.filter {
-            it.teacherName.contains(query, ignoreCase = true)
-        }
+    var wasInitialized by rememberSaveable { mutableStateOf(false) }
+    if (!wasInitialized && scheduleEventDetails.teacher.teacherName.isNotBlank()) {
+        query = scheduleEventDetails.teacher.teacherName
+        wasInitialized = true
     }
+    val focusManager = LocalFocusManager.current
+    val filteredTeachers = teachersList
 
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
+        expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier
     ) {
         TextField(
             value = query,
             onValueChange = {
                 query = it
+                onQueryChange(it)
                 expanded = true
             },
             label = { Text("Select teacher") },
@@ -395,9 +386,7 @@ fun TeacherSelection(
         )
 
         ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+            expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredTeachers.isEmpty()) {
                 DropdownMenuItem(
                     text = { Text("No matching teachers") },
@@ -405,18 +394,19 @@ fun TeacherSelection(
                     enabled = false
                 )
             } else {
-                LazyColumn (modifier = Modifier.height(50.dp * filteredTeachers.size.coerceAtMost(5)).width(500.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .height(50.dp * filteredTeachers.size.coerceAtMost(5))
+                        .width(500.dp)
+                ) {
                     items(filteredTeachers.size) { index ->
                         val teacher = filteredTeachers[index]
-                        DropdownMenuItem(
-                            text = { Text(teacher.teacherName) },
-                            onClick = {
-                                expanded = false
-                                onValueChange(scheduleEventDetails.copy(teacher = teacher))
-                                query = teacher.teacherName
-                                focusManager.clearFocus()
-                            }
-                        )
+                        DropdownMenuItem(text = { Text(teacher.teacherName) }, onClick = {
+                            expanded = false
+                            onValueChange(scheduleEventDetails.copy(teacher = teacher))
+                            query = teacher.teacherName
+                            focusManager.clearFocus()
+                        })
                     }
                 }
             }
@@ -424,32 +414,34 @@ fun TeacherSelection(
     }
 }
 
+
 @Composable
 fun LocationSelection(
     locationsList: List<Location>,
     scheduleEventDetails: ScheduleEventDetails,
     onValueChange: (ScheduleEventDetails) -> Unit,
+    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
+    var wasInitialized by rememberSaveable { mutableStateOf(false) }
+    if (!wasInitialized && scheduleEventDetails.location.roomCode.isNotBlank()) {
+        query = scheduleEventDetails.location.roomCode
+        wasInitialized = true
+    }
     val focusManager = LocalFocusManager.current
 
-    val filteredLocations = remember(query, locationsList) {
-        locationsList.filter {
-            it.roomCode.contains(query, ignoreCase = true)
-        }
-    }
+    val filteredLocations = locationsList
 
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
+        expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier
     ) {
         TextField(
             value = query,
             onValueChange = {
                 query = it
+                onQueryChange(it)
                 expanded = true
             },
             label = { Text("Select location") },
@@ -463,9 +455,7 @@ fun LocationSelection(
         )
 
         ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+            expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredLocations.isEmpty()) {
                 DropdownMenuItem(
                     text = { Text("No matching locations") },
@@ -473,7 +463,11 @@ fun LocationSelection(
                     enabled = false
                 )
             } else {
-                LazyColumn (modifier = Modifier.height(50.dp * filteredLocations.size.coerceAtMost(5)).width(500.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .height(50.dp * filteredLocations.size.coerceAtMost(5))
+                        .width(500.dp)
+                ) {
                     items(filteredLocations.size) { location ->
                         DropdownMenuItem(
                             text = { Text(filteredLocations[location].roomCode) },
@@ -482,14 +476,14 @@ fun LocationSelection(
                                 onValueChange(scheduleEventDetails.copy(location = filteredLocations[location]))
                                 query = filteredLocations[location].roomCode
                                 focusManager.clearFocus()
-                            }
-                        )
+                            })
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun DaySelection(
@@ -507,15 +501,13 @@ fun DaySelection(
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
-                modifier = Modifier
-                    .clickable { dayDropdownExpanded = true })
+                modifier = Modifier.clickable { dayDropdownExpanded = true })
 
             Spacer(
                 modifier = Modifier
                     .matchParentSize()
                     .clickable { dayDropdownExpanded = true }
-                    .background(Color.Transparent)
-            )
+                    .background(Color.Transparent))
 
             DropdownMenu(
                 expanded = dayDropdownExpanded,
@@ -532,6 +524,7 @@ fun DaySelection(
         }
     }
 }
+
 
 @Composable
 fun TimeSelection(
@@ -567,6 +560,7 @@ fun TimeSelection(
 
 }
 
+
 @Composable
 fun HourSelection(
     scheduleEventDetails: ScheduleEventDetails,
@@ -587,14 +581,12 @@ fun HourSelection(
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
-                modifier = Modifier
-                    .clickable { hourDropdownExpanded = true })
+                modifier = Modifier.clickable { hourDropdownExpanded = true })
             Spacer(
                 modifier = Modifier
                     .matchParentSize()
                     .clickable { hourDropdownExpanded = true }
-                    .background(Color.Transparent)
-            )
+                    .background(Color.Transparent))
             DropdownMenu(
                 expanded = hourDropdownExpanded,
                 onDismissRequest = { hourDropdownExpanded = false },
@@ -614,8 +606,8 @@ fun HourSelection(
             }
         }
     }
-
 }
+
 
 @Composable
 fun RadioButtonObligationSelection(
@@ -624,7 +616,12 @@ fun RadioButtonObligationSelection(
     modifier: Modifier = Modifier
 ) {
     val radioOptions = listOf(Obligation.P, Obligation.PV, Obligation.V)
-    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+    var selectedOption by rememberSaveable { mutableStateOf(radioOptions[0]) }
+    var wasInitialized by rememberSaveable { mutableStateOf(false) }
+    if (!wasInitialized) {
+        selectedOption = scheduleEventDetails.obligation
+        wasInitialized = true
+    }
     Column(modifier.selectableGroup()) {
         radioOptions.forEach { obligation ->
             Row(
@@ -633,14 +630,14 @@ fun RadioButtonObligationSelection(
                     .height(56.dp)
                     .selectable(
                         selected = (obligation == selectedOption),
-                        onClick = { onOptionSelected(obligation) },
+                        onClick = { },
                         role = Role.RadioButton
                     )
                     .padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = (obligation == selectedOption), onClick = {
-                        onOptionSelected(obligation)
+                        selectedOption = obligation
                         onValueChange(scheduleEventDetails.copy(obligation = obligation))
                     })
                 Text(
