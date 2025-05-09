@@ -10,6 +10,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Column
@@ -61,45 +62,59 @@ class AppWidget : GlanceAppWidget() {
                 .background(backgroundColor)
                 .padding(8.dp)
         ) {
-            eventsByDay.forEach { (dayIndex, dayEvents) ->
-                Column(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                ) {
-                    Text(
-                        text = weekdays[dayIndex],
-                        style = TextStyle(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
+            LazyColumn(
+                modifier = GlanceModifier.fillMaxSize()
+            ) {
+                items(eventsByDay.size) {
+                    val dayIndex = eventsByDay[it].first
+                    val dayEvents = eventsByDay[it].second
 
-                    dayEvents.forEach { event ->
-
-                        val cardColor = when (event.scheduleEvent.obligation) {
-                            Obligation.P -> R.color.schedule_obligatory
-                            Obligation.PV -> R.color.schedule_half_obligatory
-                            Obligation.V -> R.color.schedule_selective
-                        }
-
+                    Column(
+                        modifier = GlanceModifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
                         Text(
-                            text = String.format(Locale.US, "%-10s [%d:00 - %d:00] %10s", event.scheduleEvent.subjectShortenedCode, event.scheduleEvent.startHour, event.scheduleEvent.endHour, event.scheduleEvent.roomCode),
-                            style = TextStyle(
-                                fontSize = 9.sp
-                            ),
-                            modifier = GlanceModifier
-                                .fillMaxWidth()
-                                .padding(2.dp)
-                                .background(cardColor)
-                                .cornerRadius(4.dp)
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                            text = weekdays[dayIndex], style = TextStyle(
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold
+                            )
                         )
 
+                        dayEvents.forEach { event ->
+
+                            val cardColor = when (event.scheduleEvent.obligation) {
+                                Obligation.P -> R.color.schedule_obligatory
+                                Obligation.PV -> R.color.schedule_half_obligatory
+                                Obligation.V -> R.color.schedule_selective
+                            }
+
+                            Text(
+                                text = String.format(
+                                    Locale.US,
+                                    "%-20s %-20s %-10s",
+                                    event.scheduleEvent.subjectShortenedCode,
+                                    String.format(
+                                        Locale.US,
+                                        "[%02d:00 - %02d:00]",
+                                        event.scheduleEvent.startHour,
+                                        event.scheduleEvent.endHour
+                                    ),
+                                    event.scheduleEvent.roomCode
+                                ),
+                                style = TextStyle(
+                                    fontSize = 10.sp
+                                ),
+                                modifier = GlanceModifier
+                                    .fillMaxWidth()
+                                    .padding(2.dp)
+                                    .background(cardColor)
+                                    .cornerRadius(4.dp)
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+
+                        }
+                        Spacer(modifier = GlanceModifier.height(16.dp))
                     }
-
-                    Spacer(modifier = GlanceModifier.height(24.dp))
-
                 }
             }
         }
