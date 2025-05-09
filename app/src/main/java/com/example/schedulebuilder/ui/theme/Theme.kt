@@ -1,6 +1,5 @@
 package com.example.schedulebuilder.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,33 +11,47 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = UnizaDark,
+    secondary = UnizaMedium,
+    tertiary = UnizaMedium,
+
+    background = UnizaLight,
+    surface = UnizaLight,
+    onPrimary = UnizaLight,
+    onSecondary = UnizaLight,
+    onTertiary = UnizaLight,
+
+    onBackground = WarmBlack,
+    onSurface = WarmBlack,
+
+    error = DarkRed,
+    onError = OnDarkRed,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = UnizaDark,
+    secondary = UnizaMedium,
+    tertiary = UnizaMedium,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
+    background = UnizaLight,
+    surface = UnizaLight,
+    onPrimary = UnizaLight,
+    onSecondary = UnizaLight,
+    onTertiary = UnizaLight,
+
+    onBackground = WarmBlack,
+    onSurface = WarmBlack,
+
+    error = DarkRed,
+    onError = OnDarkRed,
+
+    )
 
 @Composable
 fun ScheduleBuilderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    dynamicColor: Boolean = true, content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -51,8 +64,6 @@ fun ScheduleBuilderTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = colorScheme, typography = Typography, content = content
     )
 }

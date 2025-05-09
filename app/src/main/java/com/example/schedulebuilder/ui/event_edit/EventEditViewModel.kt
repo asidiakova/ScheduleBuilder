@@ -94,7 +94,7 @@ class EventEditViewModel(
         private set
 
     private val scheduleEventId: Int =
-        checkNotNull(savedStateHandle[EventEditDestination.eventIdArg])
+        checkNotNull(savedStateHandle[EventEditDestination.EVENT_ID_ARG])
 
     init {
         viewModelScope.launch {

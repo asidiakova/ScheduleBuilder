@@ -51,12 +51,17 @@ import com.example.schedulebuilder.ui.event_entry.ScheduleEventUiState
 import com.example.schedulebuilder.ui.event_entry.SubjectSelection
 import com.example.schedulebuilder.ui.event_entry.TeacherSelection
 import com.example.schedulebuilder.ui.event_entry.TimeSelection
+import com.example.schedulebuilder.ui.theme.DarkRed
+import com.example.schedulebuilder.ui.theme.OnDarkRed
+import com.example.schedulebuilder.ui.theme.UnizaDark
+import com.example.schedulebuilder.ui.theme.UnizaLight
+import com.example.schedulebuilder.ui.theme.UnizaMedium
 import kotlinx.coroutines.CoroutineScope
 
 object EventEditDestination : NavDestination {
     override val route = "edit_schedule_event"
-    const val eventIdArg = "eventId"
-    val routeWithArgs = "$route/{$eventIdArg}"
+    const val EVENT_ID_ARG = "eventId"
+    val routeWithArgs = "$route/{$EVENT_ID_ARG}"
 }
 
 
@@ -106,7 +111,7 @@ fun EventEditScreen(
                         navigateBack()
                     }
                     navigateBack()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     openErrorDialog.value = true
                 }
             },
@@ -159,7 +164,7 @@ fun EventEditDialog(
                             viewModel.saveScheduleEventEdits()
                             navigateBack()
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         onError()
                     }
                 },
@@ -194,7 +199,12 @@ fun EventEditDialogContent(
                 }
             }, actions = {
                 TextButton(
-                    onClick = onSaveEvent, enabled = eventUiState.isEntryValid
+                    colors = ButtonColors(
+                        contentColor = UnizaDark,
+                        containerColor = Color.Transparent,
+                        disabledContentColor = UnizaDark,
+                        disabledContainerColor = Color.Transparent
+                    ), onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {
                     Text(stringResource(R.string.save))
                 }
@@ -232,6 +242,7 @@ fun ConfirmationDialog(
     icon: ImageVector? = null
 ) {
     AlertDialog(
+        containerColor = UnizaLight,
         icon = {
             if (icon != null) {
                 Icon(icon, contentDescription = stringResource(R.string.dialog_icon))
@@ -248,7 +259,12 @@ fun ConfirmationDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
+                colors = ButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = UnizaMedium,
+                    disabledContainerColor = Color.Transparent,
+                    disabledContentColor = UnizaMedium
+                ), onClick = {
                     onConfirmation()
                 }) {
                 Text(stringResource(R.string.confirm))
@@ -256,7 +272,12 @@ fun ConfirmationDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = {
+                colors = ButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = UnizaMedium,
+                    disabledContainerColor = Color.Transparent,
+                    disabledContentColor = UnizaMedium
+                ), onClick = {
                     onDismissRequest()
                 }) {
                 Text(stringResource(R.string.dismiss))
@@ -274,9 +295,9 @@ fun ErrorDialog(
     dialogText: String,
 ) {
     AlertDialog(
+        containerColor = UnizaLight,
         icon = {
             Icon(Icons.Default.Warning, contentDescription = stringResource(R.string.dialog_icon))
-
         },
         title = {
             Text(text = dialogTitle)
@@ -289,7 +310,12 @@ fun ErrorDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
+                colors = ButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = UnizaMedium,
+                    disabledContainerColor = Color.Transparent,
+                    disabledContentColor = UnizaMedium
+                ), onClick = {
                     onConfirmation()
                 }) {
                 Text(stringResource(R.string.ok))
@@ -349,6 +375,9 @@ fun ScheduleEventEntryForm(
             modifier = Modifier.weight(1f)
         )
     }
+
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
+
     TimeSelection(
         scheduleEventDetails = eventUiState.scheduleEventDetails,
         onValueChange = onScheduleEventValueChange,
@@ -375,10 +404,10 @@ fun RemoveEventButton(
 ) {
     TextButton(
         colors = ButtonColors(
-            containerColor = Color.Red,
-            contentColor = Color.Black,
-            disabledContainerColor = Color.Red,
-            disabledContentColor = Color.Black
+            containerColor = DarkRed,
+            contentColor = OnDarkRed,
+            disabledContainerColor = DarkRed,
+            disabledContentColor = OnDarkRed
         ),
         onClick = onRemoveEvent,
     ) {

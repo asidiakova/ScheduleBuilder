@@ -5,7 +5,6 @@ package com.example.schedulebuilder.ui.schedule
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +30,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -60,27 +60,31 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.glance.text.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
 import com.example.schedulebuilder.data.FullScheduleEvent
-import com.example.schedulebuilder.data.Location
 import com.example.schedulebuilder.data.Obligation
-import com.example.schedulebuilder.data.ScheduleEvent
-import com.example.schedulebuilder.data.Subject
-import com.example.schedulebuilder.data.Teacher
 import com.example.schedulebuilder.ui.AppViewModelProvider
 import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
 import com.example.schedulebuilder.ui.navigation.NavDestination
+import com.example.schedulebuilder.ui.theme.LightGray
+import com.example.schedulebuilder.ui.theme.ScheduleEmptyCell
+import com.example.schedulebuilder.ui.theme.ScheduleHalfObligatory
+import com.example.schedulebuilder.ui.theme.ScheduleObligatory
+import com.example.schedulebuilder.ui.theme.ScheduleSelective
+import com.example.schedulebuilder.ui.theme.Typography
+import com.example.schedulebuilder.ui.theme.UnizaDark
+import com.example.schedulebuilder.ui.theme.UnizaLight
+import com.example.schedulebuilder.ui.theme.UnizaLightAccent
+import com.example.schedulebuilder.ui.theme.WarmBlack
 import kotlinx.coroutines.launch
 
 
@@ -112,23 +116,24 @@ fun ScheduleScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = colorResource(R.color.uniza_dark),
-                    titleContentColor = colorResource(R.color.uniza_light)
+                    containerColor = UnizaDark, titleContentColor = UnizaLight
                 ),
                 title = {
                     Text(
                         text = stringResource(R.string.my_schedule),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Left,
-                        modifier = Modifier.fillMaxWidth()
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensionResource(R.dimen.padding_medium))
                     )
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
         bottomBar = {
-            BottomAppBar(containerColor = colorResource(R.color.uniza_light), actions = {
+            BottomAppBar(containerColor = UnizaLight, actions = {
                 IconButton(onClick = { showBottomSheet = true }) {
                     Icon(
                         Icons.Filled.Edit,
@@ -138,7 +143,7 @@ fun ScheduleScreen(
             }, floatingActionButton = {
                 FloatingActionButton(
                     onClick = addEvent,
-                    containerColor = colorResource(R.color.uniza_light_accent),
+                    containerColor = UnizaLightAccent,
                     elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
                 ) {
                     Icon(Icons.Filled.Add, stringResource(R.string.icon_description))
@@ -156,11 +161,10 @@ fun ScheduleScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CenteredScheduleGrid(
-                events = scheduleUiState.eventsList,
-                modifier = Modifier.fillMaxWidth(),
-                onEventClick = {
+                events = scheduleUiState.eventsList, onEventClick = {
                     selectedEvent = it
-                })
+                }, modifier = Modifier.fillMaxWidth()
+            )
             selectedEvent?.let { event ->
                 EventDetailsDialog(
                     event = event,
@@ -204,37 +208,39 @@ fun ScheduleScreen(
 
 @Composable
 fun CenteredScheduleGrid(
+    modifier: Modifier = Modifier,
     events: List<FullScheduleEvent> = emptyList<FullScheduleEvent>(),
-    modifier: Modifier,
     onEventClick: (FullScheduleEvent) -> Unit = {}
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize(), contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
     ) {
         ScheduleTable(
-            modifier = Modifier.fillMaxWidth(0.98f).verticalScroll(rememberScrollState()), events = events, onEventClick = onEventClick
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_small))
+                .verticalScroll(rememberScrollState()), events = events, onEventClick = onEventClick
         )
     }
 }
 
 @Composable
 fun ScheduleTable(
+    modifier: Modifier = Modifier,
     events: List<FullScheduleEvent> = emptyList<FullScheduleEvent>(),
-    modifier: Modifier,
     onEventClick: (FullScheduleEvent) -> Unit
 ) {
     val timeslots = (START_HOUR..END_HOUR).map { "$it:00" }
     val weekdays = listOf(
-        stringResource(R.string.monday),
-        stringResource(R.string.tuesday),
-        stringResource(R.string.wednesday),
-        stringResource(R.string.thursday),
-        stringResource(R.string.friday)
+        stringResource(R.string.mon),
+        stringResource(R.string.tue),
+        stringResource(R.string.wed),
+        stringResource(R.string.thu),
+        stringResource(R.string.fri)
     )
 
     Column(
-        modifier = modifier.border(dimensionResource(id = R.dimen.border_full), Color.LightGray)
+        modifier = modifier.border(dimensionResource(id = R.dimen.border_full), LightGray)
     ) {
         Row(
             modifier = Modifier
@@ -244,7 +250,7 @@ fun ScheduleTable(
             Box(
                 modifier = Modifier
                     .width(dimensionResource(id = R.dimen.day_label_width))
-                    .border(dimensionResource(id = R.dimen.border_half), Color.LightGray)
+                    .border(dimensionResource(id = R.dimen.border_half), LightGray)
             )
 
             timeslots.forEach { time ->
@@ -252,13 +258,13 @@ fun ScheduleTable(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .border(dimensionResource(id = R.dimen.border_half), Color.LightGray),
+                        .border(dimensionResource(id = R.dimen.border_half), LightGray),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = time,
-                        fontSize = 10.sp,
-                        color = Color.Black,
+                        fontSize = 9.sp,
+                        color = WarmBlack,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -275,24 +281,29 @@ fun ScheduleTable(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .border(dimensionResource(id = R.dimen.border_half), Color.LightGray)
+                        .border(dimensionResource(id = R.dimen.border_half), LightGray)
                 ) {
                     Box(
                         modifier = Modifier
                             .width(dimensionResource(id = R.dimen.day_label_width))
                             .fillMaxSize()
-                            .border(dimensionResource(id = R.dimen.border_half), Color.LightGray),
-                        contentAlignment = Alignment.Center
+                            .border(dimensionResource(id = R.dimen.border_half), LightGray),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        Text(
-                            text = day,
-                            fontSize = 10.sp,
-                            lineHeight = 12.sp,
-                            maxLines = 1,
-                            color = Color.Black,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.rotate(270f)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .rotate(270f)
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = day,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                                fontWeight = FontWeight.Bold,
+                                softWrap = false,
+                            )
+                        }
                     }
 
                     Box(
@@ -309,10 +320,9 @@ fun ScheduleTable(
                                         .weight(1f)
                                         .fillMaxHeight()
                                         .border(
-                                            dimensionResource(id = R.dimen.border_half),
-                                            Color.LightGray
+                                            dimensionResource(id = R.dimen.border_half), LightGray
                                         )
-                                        .background(colorResource(id = R.color.schedule_empty_cell))
+                                        .background(ScheduleEmptyCell)
                                 )
                             }
                         }
@@ -347,8 +357,6 @@ fun ScheduleTable(
 
                                 }
                         }
-
-
                     }
                 }
             }
@@ -365,13 +373,11 @@ fun BoxWithConstraintsScope.EventCard(
     Card(
         modifier = modifier.fillMaxSize(),
         colors = CardDefaults.cardColors(
-            containerColor = colorResource(
-                when (event.scheduleEvent.obligation) {
-                    Obligation.P -> R.color.schedule_obligatory
-                    Obligation.PV -> R.color.schedule_half_obligatory
-                    Obligation.V -> R.color.schedule_selective
-                }
-            )
+            containerColor = when (event.scheduleEvent.obligation) {
+                Obligation.P -> ScheduleObligatory
+                Obligation.PV -> ScheduleHalfObligatory
+                Obligation.V -> ScheduleSelective
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(id = R.dimen.card_elevation)),
         onClick = {
@@ -381,26 +387,24 @@ fun BoxWithConstraintsScope.EventCard(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(dimensionResource(id = R.dimen.padding_extra_small)),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Text(
                 text = event.teacher.teacherName,
-                fontSize = 8.sp,
-                lineHeight = 12.sp,
+                style = Typography.displaySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = event.location.roomCode,
-                fontSize = 8.sp,
-                lineHeight = 12.sp,
+                style = Typography.displaySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = event.subject.shortenedCode,
-                fontSize = 8.sp,
-                lineHeight = 12.sp,
+                style = Typography.displaySmall,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -431,44 +435,48 @@ fun EventDetailsDialog(
                 .padding(dimensionResource(id = R.dimen.padding_medium)),
             shape = RoundedCornerShape(dimensionResource(id = R.dimen.rounded_corner_shape)),
             colors = CardDefaults.cardColors(
-                containerColor = colorResource(
-                    when (event.scheduleEvent.obligation) {
-                        Obligation.P -> R.color.schedule_obligatory
-                        Obligation.PV -> R.color.schedule_half_obligatory
-                        Obligation.V -> R.color.schedule_selective
-                    }
-                )
+                containerColor = when (event.scheduleEvent.obligation) {
+                    Obligation.P -> ScheduleObligatory
+                    Obligation.PV -> ScheduleHalfObligatory
+                    Obligation.V -> ScheduleSelective
+                }
             )
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(dimensionResource(R.dimen.padding_small)),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = event.subject.fullDisplayName,
-                    fontSize = 18.sp,
+                    style = Typography.headlineMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.event_details_spacer)))
+
                 Text(
                     text = event.location.roomCode,
-                    fontSize = 16.sp,
+                    style = Typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = weekdays[event.scheduleEvent.day - 1] + " ${event.scheduleEvent.startHour}:00 - ${event.scheduleEvent.endHour}:00",
-                    fontSize = 16.sp,
+                    style = Typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = event.teacher.teacherName,
-                    fontSize = 16.sp,
+                    style = Typography.bodyLarge,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.event_details_spacer)))
@@ -481,12 +489,18 @@ fun EventDetailsDialog(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     TextButton(
+                        colors = ButtonColors(
+                            contentColor = UnizaDark,
+                            containerColor = Color.Transparent,
+                            disabledContentColor = UnizaDark,
+                            disabledContainerColor = Color.Transparent
+                        ),
                         onClick = {
                             onClickEdit(event.scheduleEvent.id)
                         },
                         modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small)),
                     ) {
-                        Text(stringResource(R.string.edit_event))
+                        Text(stringResource(R.string.edit_event), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -550,45 +564,21 @@ fun BottomSheetActionItem(
             modifier = Modifier
                 .size(dimensionResource(id = R.dimen.bottom_sheet_box_size))
                 .background(
-                    Color(0xFFDDE3FF),
+                    UnizaLightAccent,
                     shape = RoundedCornerShape(dimensionResource(id = R.dimen.bottom_sheet_rounded_corner))
                 )
                 .padding(dimensionResource(id = R.dimen.padding_small)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon, contentDescription = label, tint = Color(0xFF2F3E7C)
+                imageVector = icon, contentDescription = label, tint = UnizaDark
             )
         }
         Text(
             text = label,
-            color = Color(0xFF2F3E7C),
-            fontSize = 16.sp,
+            color = UnizaDark,
+            style = Typography.bodyLarge,
             modifier = Modifier.padding(start = dimensionResource(id = R.dimen.padding_medium))
         )
     }
-}
-
-@Preview
-@Composable
-fun EventDetailsDialogPreview() {
-    EventDetailsDialog(
-        event = FullScheduleEvent(
-        scheduleEvent = ScheduleEvent(
-            id = 1,
-            day = 1,
-            startHour = 8,
-            endHour = 10,
-            teacherName = "John Doe",
-            roomCode = "A101",
-            subjectShortenedCode = "Vyvoj aplikacci pre mobilne zariadenie",
-            obligation = Obligation.P
-        ), subject = Subject(
-            shortenedCode = "MAT101", fullDisplayName = "Vyvoj aplikacci pre mobilne zariadenie wefubewf weofnsdf wfuksdf"
-        ), teacher = Teacher(
-            teacherName = "John Doe"
-        ), location = Location(
-            roomCode = "A101"
-        )
-    ), onDismissRequest = {}, onClickEdit = {})
 }

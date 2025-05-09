@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,11 +33,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +70,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
 import com.example.schedulebuilder.ui.event_edit.ErrorDialog
+import com.example.schedulebuilder.ui.theme.LightGray
+import com.example.schedulebuilder.ui.theme.OnDarkRed
+import com.example.schedulebuilder.ui.theme.UnizaDark
+import com.example.schedulebuilder.ui.theme.UnizaMedium
 import kotlinx.coroutines.CoroutineScope
 
 object EventEntryDestination : NavDestination {
@@ -149,7 +156,7 @@ fun EventEntryDialog(
                             viewModel.saveScheduleEvent()
                             navigateBack()
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         onError()
                     }
                 },
@@ -182,7 +189,12 @@ fun EventEntryDialogContent(
                 }
             }, actions = {
                 TextButton(
-                    onClick = onSaveEvent, enabled = eventUiState.isEntryValid
+                    colors = ButtonColors(
+                        contentColor = UnizaDark,
+                        containerColor = Color.Transparent,
+                        disabledContentColor = UnizaDark,
+                        disabledContainerColor = Color.Transparent
+                    ), onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {
                     Text(stringResource(R.string.save))
                 }
@@ -258,6 +270,9 @@ fun ScheduleEventEntryForm(
             modifier = Modifier.weight(1f)
         )
     }
+
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
+
     TimeSelection(
         scheduleEventDetails = eventUiState.scheduleEventDetails,
         onValueChange = onScheduleEventValueChange,
@@ -301,13 +316,21 @@ fun SubjectSelection(
         }
     }
 
-    Text(stringResource(R.string.select_a_subject))
+    Text(
+        stringResource(R.string.select_a_subject),
+        modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_small))
+    )
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded },
         modifier = modifier.fillMaxWidth()
     ) {
         TextField(
+            colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = UnizaDark,
+            cursorColor = UnizaDark,
+            focusedLabelColor = UnizaDark
+        ),
             value = query,
             onValueChange = {
                 query = it
@@ -395,6 +418,11 @@ fun TeacherSelection(
         expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier
     ) {
         TextField(
+            colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = UnizaDark,
+            cursorColor = UnizaDark,
+            focusedLabelColor = UnizaDark
+        ),
             value = query,
             onValueChange = {
                 query = it
@@ -468,6 +496,11 @@ fun LocationSelection(
         expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier
     ) {
         TextField(
+            colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = UnizaDark,
+            cursorColor = UnizaDark,
+            focusedLabelColor = UnizaDark
+        ),
             value = query,
             onValueChange = {
                 query = it
@@ -583,21 +616,25 @@ fun TimeSelection(
             scheduleEventDetails = scheduleEventDetails,
             isStartHour = true,
             onValueChange = onValueChange,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(dimensionResource(R.dimen.padding_extra_small))
         )
         HourSelection(
             scheduleEventDetails = scheduleEventDetails,
             isStartHour = false,
             onValueChange = onValueChange,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(dimensionResource(R.dimen.padding_extra_small))
         )
     }
 
     if (!isTimeValid) {
         Text(
             stringResource(R.string.time_error),
-            color = Color.Red,
-            modifier = Modifier.padding(top = dimensionResource(id = R.dimen.padding_extra_small))
+            color = OnDarkRed,
+            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small))
         )
     }
 
@@ -618,7 +655,7 @@ fun HourSelection(
     val label =
         if (isStartHour) stringResource(R.string.start_hour) else stringResource(R.string.end_hour)
     Column(modifier = modifier) {
-        Text(label)
+        Text(label, modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_small)))
         Box {
             OutlinedTextField(
                 value = "$selectedHour:00",
@@ -684,9 +721,15 @@ fun RadioButtonObligationSelection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
-                    selected = (obligation == selectedOption), onClick = {
+                    colors = RadioButtonColors(
+                        selectedColor = UnizaDark,
+                        disabledSelectedColor = UnizaMedium,
+                        unselectedColor = LightGray,
+                        disabledUnselectedColor = LightGray
+                    ), selected = (obligation == selectedOption), onClick = {
                         selectedOption = obligation
                         onValueChange(scheduleEventDetails.copy(obligation = obligation))
+
                     })
                 Text(
                     text = obligation.name,

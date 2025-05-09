@@ -9,7 +9,7 @@
     <dimen name="table_row_height">80dp</dimen>
     <dimen name="day_label_width">20dp</dimen>
     <dimen name="card_elevation">1dp</dimen>
-    <dimen name="rounded_corner_shape">16dp</dimen>
+    <dimen name="rounded_corner_shape">24dp</dimen>
     <dimen name="bottom_sheet_rounded_corner">50dp</dimen>
     <dimen name="border_full">1dp</dimen>
     <dimen name="event_details_height">375dp</dimen>
@@ -20,5 +20,5 @@
     <dimen name="lazy_column_height">50dp</dimen>
     <dimen name="lazy_column_width">500dp</dimen>
     <dimen name="radio_button_row_height">56dp</dimen>
-    <dimen name="border_half" type="dimen" format="float">0.5dp</dimen>
+    <dimen name="border_half" format="float" type="dimen">0.3dp</dimen>
 </resources>
