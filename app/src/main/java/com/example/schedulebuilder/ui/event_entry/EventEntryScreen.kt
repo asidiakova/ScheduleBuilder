@@ -51,8 +51,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
 import com.example.schedulebuilder.data.Location
@@ -65,11 +66,11 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedulebuilder.ui.event_edit.ConfirmationDialog
+import com.example.schedulebuilder.ui.event_edit.ErrorDialog
 import kotlinx.coroutines.CoroutineScope
 
 object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
-    override val titleRes = R.string.app_name
 }
 
 
@@ -80,11 +81,16 @@ fun EventEntryScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val openAlertDialog = remember { mutableStateOf(false) }
+    val openErrorDialog = remember { mutableStateOf(false) }
 
     EventEntryDialog(
         onDismissRequest = {
-            openAlertDialog.value = true
-        }, navigateBack = navigateBack, viewModel = viewModel, coroutineScope = coroutineScope
+        openAlertDialog.value = true
+    },
+        onError = { openErrorDialog.value = true },
+        navigateBack = navigateBack,
+        viewModel = viewModel,
+        coroutineScope = coroutineScope
     )
 
     if (openAlertDialog.value) {
@@ -94,8 +100,19 @@ fun EventEntryScreen(
                 openAlertDialog.value = false
                 navigateBack()
             },
-            dialogTitle = "Discard changes?",
-            dialogText = "Are you sure you want to discard your changes and close the window?",
+            dialogTitle = stringResource(R.string.discard_changes),
+            dialogText = stringResource(R.string.are_you_sure_discard),
+        )
+    }
+
+    if (openErrorDialog.value) {
+        ErrorDialog(
+            onDismissRequest = { openErrorDialog.value = false },
+            onConfirmation = {
+                openErrorDialog.value = false
+            },
+            dialogTitle = stringResource(R.string.error_completing_request),
+            dialogText = stringResource(R.string.try_again),
         )
     }
 }
@@ -104,6 +121,7 @@ fun EventEntryScreen(
 @Composable
 fun EventEntryDialog(
     onDismissRequest: () -> Unit,
+    onError: () -> Unit,
     navigateBack: () -> Unit,
     viewModel: EventEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
     coroutineScope: CoroutineScope
@@ -126,9 +144,13 @@ fun EventEntryDialog(
                 eventUiState = eventUiState,
                 onUpdateUiState = viewModel::updateUiState,
                 onSaveEvent = {
-                    coroutineScope.launch {
-                        viewModel.saveScheduleEvent()
-                        navigateBack()
+                    try {
+                        coroutineScope.launch {
+                            viewModel.saveScheduleEvent()
+                            navigateBack()
+                        }
+                    } catch (e: Exception) {
+                        onError()
                     }
                 },
                 viewModel = viewModel
@@ -154,22 +176,22 @@ fun EventEntryDialogContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Add Event") }, navigationIcon = {
+            TopAppBar(title = { Text(stringResource(R.string.add_event)) }, navigationIcon = {
                 IconButton(onClick = navigateBack) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                 }
             }, actions = {
                 TextButton(
                     onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             })
         }) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_medium))
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
@@ -182,7 +204,7 @@ fun EventEntryDialogContent(
                 filteredLocationsState = filteredLocationsState
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
         }
     }
 }
@@ -198,7 +220,7 @@ fun ScheduleEventEntryForm(
     onScheduleEventValueChange: (ScheduleEventDetails) -> Unit,
 ) {
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     SubjectSelection(
         predefinedSubjects = filteredSubjectsState.subjectsList,
@@ -207,7 +229,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateSubjectQuery,
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     TeacherSelection(
         teachersList = filteredTeachersState.teachersList,
@@ -216,7 +238,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateTeacherQuery
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     LocationSelection(
         locationsList = filteredLocationsState.locationsList,
@@ -225,7 +247,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateLocationQuery
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     Row(
         modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
@@ -242,14 +264,14 @@ fun ScheduleEventEntryForm(
         modifier = Modifier.fillMaxWidth()
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     RadioButtonObligationSelection(
         onValueChange = onScheduleEventValueChange,
         scheduleEventDetails = eventUiState.scheduleEventDetails
     )
 
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_large)))
 }
 
 
@@ -279,7 +301,7 @@ fun SubjectSelection(
         }
     }
 
-    Text("Select a subject")
+    Text(stringResource(R.string.select_a_subject))
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded },
@@ -307,7 +329,7 @@ fun SubjectSelection(
                     )
                 }
             },
-            label = { Text("Subject") },
+            label = { Text(stringResource(R.string.subject)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded)
             },
@@ -321,15 +343,19 @@ fun SubjectSelection(
             expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredSubjects.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("No matching subjects") },
+                    text = { Text(stringResource(R.string.no_matches)) },
                     onClick = {},
                     enabled = false
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .height(50.dp * filteredSubjects.size.coerceAtMost(5))
-                        .width(500.dp)
+                        .height(
+                            dimensionResource(id = R.dimen.lazy_column_height) * filteredSubjects.size.coerceAtMost(
+                                5
+                            )
+                        )
+                        .width(dimensionResource(id = R.dimen.lazy_column_width))
                 ) {
                     items(filteredSubjects.size) { subject ->
                         DropdownMenuItem(
@@ -375,7 +401,7 @@ fun TeacherSelection(
                 onQueryChange(it)
                 expanded = true
             },
-            label = { Text("Select teacher") },
+            label = { Text(stringResource(R.string.select_a_teacher)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -389,15 +415,19 @@ fun TeacherSelection(
             expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredTeachers.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("No matching teachers") },
+                    text = { Text(stringResource(R.string.no_matches)) },
                     onClick = {},
                     enabled = false
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .height(50.dp * filteredTeachers.size.coerceAtMost(5))
-                        .width(500.dp)
+                        .height(
+                            dimensionResource(id = R.dimen.lazy_column_height) * filteredTeachers.size.coerceAtMost(
+                                5
+                            )
+                        )
+                        .width(dimensionResource(id = R.dimen.lazy_column_width))
                 ) {
                     items(filteredTeachers.size) { index ->
                         val teacher = filteredTeachers[index]
@@ -444,7 +474,7 @@ fun LocationSelection(
                 onQueryChange(it)
                 expanded = true
             },
-            label = { Text("Select location") },
+            label = { Text(stringResource(R.string.select_a_location)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -458,15 +488,19 @@ fun LocationSelection(
             expanded = expanded, onDismissRequest = { expanded = false }) {
             if (filteredLocations.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("No matching locations") },
+                    text = { Text(stringResource(R.string.no_matches)) },
                     onClick = {},
                     enabled = false
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .height(50.dp * filteredLocations.size.coerceAtMost(5))
-                        .width(500.dp)
+                        .height(
+                            dimensionResource(id = R.dimen.lazy_column_height) * filteredLocations.size.coerceAtMost(
+                                5
+                            )
+                        )
+                        .width(dimensionResource(id = R.dimen.lazy_column_width))
                 ) {
                     items(filteredLocations.size) { location ->
                         DropdownMenuItem(
@@ -491,7 +525,13 @@ fun DaySelection(
     onValueChange: (ScheduleEventDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+    val days = listOf(
+        stringResource(R.string.monday),
+        stringResource(R.string.tuesday),
+        stringResource(R.string.wednesday),
+        stringResource(R.string.thursday),
+        stringResource(R.string.friday)
+    )
     var dayDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
@@ -500,14 +540,17 @@ fun DaySelection(
                 value = days[scheduleEventDetails.day - 1],
                 onValueChange = {},
                 readOnly = true,
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ArrowDropDown, stringResource(R.string.dropdown)
+                    )
+                },
                 modifier = Modifier.clickable { dayDropdownExpanded = true })
 
-            Spacer(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable { dayDropdownExpanded = true }
-                    .background(Color.Transparent))
+            Spacer(modifier = Modifier
+                .matchParentSize()
+                .clickable { dayDropdownExpanded = true }
+                .background(Color.Transparent))
 
             DropdownMenu(
                 expanded = dayDropdownExpanded,
@@ -552,9 +595,9 @@ fun TimeSelection(
 
     if (!isTimeValid) {
         Text(
-            "End time must be after start time",
+            stringResource(R.string.time_error),
             color = Color.Red,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = dimensionResource(id = R.dimen.padding_extra_small))
         )
     }
 
@@ -572,7 +615,8 @@ fun HourSelection(
     var hourDropdownExpanded by remember { mutableStateOf(false) }
     val selectedHour =
         if (isStartHour) scheduleEventDetails.startHour else scheduleEventDetails.endHour
-    val label = if (isStartHour) "Start Hour" else "End Hour"
+    val label =
+        if (isStartHour) stringResource(R.string.start_hour) else stringResource(R.string.end_hour)
     Column(modifier = modifier) {
         Text(label)
         Box {
@@ -580,13 +624,16 @@ fun HourSelection(
                 value = "$selectedHour:00",
                 onValueChange = {},
                 readOnly = true,
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, "dropdown") },
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ArrowDropDown, stringResource(R.string.dropdown)
+                    )
+                },
                 modifier = Modifier.clickable { hourDropdownExpanded = true })
-            Spacer(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable { hourDropdownExpanded = true }
-                    .background(Color.Transparent))
+            Spacer(modifier = Modifier
+                .matchParentSize()
+                .clickable { hourDropdownExpanded = true }
+                .background(Color.Transparent))
             DropdownMenu(
                 expanded = hourDropdownExpanded,
                 onDismissRequest = { hourDropdownExpanded = false },
@@ -627,13 +674,14 @@ fun RadioButtonObligationSelection(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(dimensionResource(id = R.dimen.radio_button_row_height))
                     .selectable(
                         selected = (obligation == selectedOption),
                         onClick = { },
                         role = Role.RadioButton
                     )
-                    .padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = dimensionResource(id = R.dimen.padding_medium)),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = (obligation == selectedOption), onClick = {
@@ -641,7 +689,8 @@ fun RadioButtonObligationSelection(
                         onValueChange(scheduleEventDetails.copy(obligation = obligation))
                     })
                 Text(
-                    text = obligation.name, modifier = Modifier.padding(start = 16.dp)
+                    text = obligation.name,
+                    modifier = Modifier.padding(start = dimensionResource(id = R.dimen.padding_medium))
                 )
             }
         }

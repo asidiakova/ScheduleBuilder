@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,7 +34,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedulebuilder.R
 import com.example.schedulebuilder.ui.AppViewModelProvider
@@ -53,7 +55,6 @@ import kotlinx.coroutines.CoroutineScope
 
 object EventEditDestination : NavDestination {
     override val route = "edit_schedule_event"
-    override val titleRes = R.string.app_name
     const val eventIdArg = "eventId"
     val routeWithArgs = "$route/{$eventIdArg}"
 }
@@ -66,14 +67,20 @@ fun EventEditScreen(
 ) {
     val openDismissDialog = remember { mutableStateOf(false) }
     val openRemoveEventDialog = remember { mutableStateOf(false) }
+    val openErrorDialog = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     EventEditDialog(
         onDismissRequest = {
-            openDismissDialog.value = true
-        }, onRemoveEventRequest = {
+        openDismissDialog.value = true
+    },
+        onRemoveEventRequest = {
             openRemoveEventDialog.value = true
-        }, navigateBack = navigateBack, viewModel = viewModel, coroutineScope = coroutineScope
+        },
+        onError = { openErrorDialog.value = true },
+        navigateBack = navigateBack,
+        viewModel = viewModel,
+        coroutineScope = coroutineScope
     )
 
     if (openDismissDialog.value) {
@@ -83,8 +90,8 @@ fun EventEditScreen(
                 openDismissDialog.value = false
                 navigateBack()
             },
-            dialogTitle = "Discard changes?",
-            dialogText = "Are you sure you want to discard your changes and close the window?",
+            dialogTitle = stringResource(R.string.discard_changes),
+            dialogText = stringResource(R.string.are_you_sure_discard),
         )
     }
 
@@ -93,14 +100,29 @@ fun EventEditScreen(
             onDismissRequest = { openRemoveEventDialog.value = false },
             onConfirmation = {
                 openRemoveEventDialog.value = false
-                coroutineScope.launch {
-                    viewModel.removeScheduleEvent()
+                try {
+                    coroutineScope.launch {
+                        viewModel.removeScheduleEvent()
+                        navigateBack()
+                    }
                     navigateBack()
+                } catch (e: Exception) {
+                    openErrorDialog.value = true
                 }
-                navigateBack()
             },
-            dialogTitle = "Remove event?",
-            dialogText = "Are you sure you want to remove this event?",
+            dialogTitle = stringResource(R.string.remove_event),
+            dialogText = stringResource(R.string.are_you_sure_remove_event),
+        )
+    }
+
+    if (openErrorDialog.value) {
+        ErrorDialog(
+            onDismissRequest = { openErrorDialog.value = false },
+            onConfirmation = {
+                openErrorDialog.value = false
+            },
+            dialogTitle = stringResource(R.string.error_completing_request),
+            dialogText = stringResource(R.string.try_again),
         )
     }
 }
@@ -110,6 +132,7 @@ fun EventEditScreen(
 fun EventEditDialog(
     onDismissRequest: () -> Unit,
     onRemoveEventRequest: () -> Unit,
+    onError: () -> Unit,
     navigateBack: () -> Unit,
     viewModel: EventEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
     coroutineScope: CoroutineScope
@@ -131,9 +154,13 @@ fun EventEditDialog(
                 eventUiState = eventUiState,
                 onUpdateUiState = viewModel::updateUiState,
                 onSaveEvent = {
-                    coroutineScope.launch {
-                        viewModel.saveScheduleEventEdits()
-                        navigateBack()
+                    try {
+                        coroutineScope.launch {
+                            viewModel.saveScheduleEventEdits()
+                            navigateBack()
+                        }
+                    } catch (e: Exception) {
+                        onError()
                     }
                 },
                 onRemoveEvent = onRemoveEventRequest,
@@ -161,22 +188,22 @@ fun EventEditDialogContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Edit Subject") }, navigationIcon = {
+            TopAppBar(title = { Text(stringResource(R.string.edit_event)) }, navigationIcon = {
                 IconButton(onClick = navigateBack) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                 }
             }, actions = {
                 TextButton(
                     onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             })
         }) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_medium))
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
@@ -190,7 +217,7 @@ fun EventEditDialogContent(
                 viewModel = viewModel
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
         }
     }
 }
@@ -207,7 +234,7 @@ fun ConfirmationDialog(
     AlertDialog(
         icon = {
             if (icon != null) {
-                Icon(icon, contentDescription = "Dialog Icon")
+                Icon(icon, contentDescription = stringResource(R.string.dialog_icon))
             }
         },
         title = {
@@ -224,7 +251,7 @@ fun ConfirmationDialog(
                 onClick = {
                     onConfirmation()
                 }) {
-                Text("Confirm")
+                Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
@@ -232,7 +259,40 @@ fun ConfirmationDialog(
                 onClick = {
                     onDismissRequest()
                 }) {
-                Text("Dismiss")
+                Text(stringResource(R.string.dismiss))
+            }
+        },
+        properties = DialogProperties(dismissOnClickOutside = true),
+    )
+}
+
+@Composable
+fun ErrorDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+) {
+    AlertDialog(
+        icon = {
+            Icon(Icons.Default.Warning, contentDescription = stringResource(R.string.dialog_icon))
+
+        },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }) {
+                Text(stringResource(R.string.ok))
             }
         },
         properties = DialogProperties(dismissOnClickOutside = true),
@@ -251,7 +311,7 @@ fun ScheduleEventEntryForm(
     onRemoveEvent: () -> Unit
 ) {
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     SubjectSelection(
         predefinedSubjects = filteredSubjectsState.subjectsList,
@@ -260,7 +320,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateSubjectQuery,
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     TeacherSelection(
         teachersList = filteredTeachersState.teachersList,
@@ -269,7 +329,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateTeacherQuery
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     LocationSelection(
         locationsList = filteredLocationsState.locationsList,
@@ -278,7 +338,7 @@ fun ScheduleEventEntryForm(
         onQueryChange = viewModel::updateLocationQuery
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     Row(
         modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
@@ -295,14 +355,14 @@ fun ScheduleEventEntryForm(
         modifier = Modifier.fillMaxWidth()
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_medium)))
 
     RadioButtonObligationSelection(
         onValueChange = onScheduleEventValueChange,
         scheduleEventDetails = eventUiState.scheduleEventDetails
     )
 
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_large)))
 
     RemoveEventButton(onRemoveEvent = onRemoveEvent)
 
@@ -322,6 +382,6 @@ fun RemoveEventButton(
         ),
         onClick = onRemoveEvent,
     ) {
-        Text("Remove event")
+        Text(stringResource(R.string.remove_event))
     }
 }

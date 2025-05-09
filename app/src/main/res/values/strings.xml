@@ -2,4 +2,43 @@
     <string name="app_name">ScheduleBuilder</string>
     <string name="my_schedule">My Schedule</string>
 
+    <string name="discard_changes">Discard changes</string>
+    <string name="are_you_sure_discard">Are you sure you want to discard your changes and close the window?</string>
+    <string name="remove_event">Remove event</string>
+    <string name="are_you_sure_remove_event">Are you sure you want to remove this event?</string>
+    <string name="close">Close</string>
+    <string name="save">Save</string>
+    <string name="dialog_icon">Dialog Icon</string>
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="add_event">Add Event</string>
+    <string name="edit_event">Edit Event</string>
+    <string name="select_a_subject">Select a subject</string>
+    <string name="subject">Subject</string>
+    <string name="no_matches">No matches</string>
+    <string name="select_a_teacher">Select a teacher</string>
+    <string name="select_a_location">Select a location</string>
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="dropdown">Dropdown</string>
+    <string name="time_error">End time must be after start time</string>
+    <string name="start_hour">Start Hour</string>
+    <string name="end_hour">End Hour</string>
+    <string name="icon_description">Icon description</string>
+    <string name="clear_schedule">Clear schedule</string>
+    <string name="are_you_sure_delete_all">Are you sure you want to delete all events?</string>
+    <string name="cancel">Cancel</string>
+    <string name="mon">Mon</string>
+    <string name="tue">Tue</string>
+    <string name="wed">Wed</string>
+    <string name="thu">Thu</string>
+    <string name="fri">Fri</string>
+    <string name="ok">OK</string>
+    <string name="error_completing_request">Error completing the request</string>
+    <string name="try_again">Please try again</string>
+
+
 </resources>
