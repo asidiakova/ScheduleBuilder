@@ -28,7 +28,6 @@ class ScheduleScreenViewModel(private val scheduleEventsRepository: ScheduleEven
     suspend fun clearSchedule() {
         scheduleEventsRepository.deleteAllEvents()
     }
-
 }
 
 data class ScheduleUiState(val eventsList: List<FullScheduleEvent> = listOf())

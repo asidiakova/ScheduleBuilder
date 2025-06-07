@@ -3,9 +3,6 @@ package com.example.schedulebuilder.data
 import androidx.room.Embedded
 import androidx.room.Relation
 
-/**
- * Represents a full schedule event with associated [Teacher], [Location], and [Subject] information.
- */
 data class FullScheduleEvent(
     @Embedded
     val scheduleEvent: ScheduleEvent,
