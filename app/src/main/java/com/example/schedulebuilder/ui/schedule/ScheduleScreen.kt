@@ -87,7 +87,9 @@ import com.example.schedulebuilder.ui.theme.UnizaLightAccent
 import com.example.schedulebuilder.ui.theme.WarmBlack
 import kotlinx.coroutines.launch
 
-
+/**
+ * Navigation destination for the schedule screen.
+ */
 object ScheduleDestination : NavDestination {
     override val route = "schedule"
 }

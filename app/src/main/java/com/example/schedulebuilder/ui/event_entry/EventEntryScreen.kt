@@ -76,6 +76,9 @@ import com.example.schedulebuilder.ui.theme.UnizaDark
 import com.example.schedulebuilder.ui.theme.UnizaMedium
 import kotlinx.coroutines.CoroutineScope
 
+/**
+ * Navigation destination for the event entry screen.
+ */
 object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
 }
@@ -192,7 +195,7 @@ fun EventEntryDialogContent(
                     colors = ButtonColors(
                         contentColor = UnizaDark,
                         containerColor = Color.Transparent,
-                        disabledContentColor = UnizaDark,
+                        disabledContentColor = Color.Gray,
                         disabledContainerColor = Color.Transparent
                     ), onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {

@@ -5,6 +5,9 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+/**
+ * Represents a schedule event.
+ */
 @Entity(
     tableName = "schedule_events", foreignKeys = [
         ForeignKey(

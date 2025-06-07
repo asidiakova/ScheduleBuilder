@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * Room database for the app.
+ */
 @Database(
     entities = [ScheduleEvent::class, Subject::class, Teacher::class, Location::class],
     version = 2,

@@ -30,6 +30,9 @@ import com.example.schedulebuilder.data.ScheduleEventsRepositoryInterface
 import kotlinx.coroutines.flow.first
 import java.util.Locale
 
+/**
+ * Application widget that displays the schedule.
+ */
 class AppWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {

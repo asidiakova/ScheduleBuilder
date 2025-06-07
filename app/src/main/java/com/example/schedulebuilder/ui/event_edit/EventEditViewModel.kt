@@ -26,6 +26,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel to retrieve and update an event in the edit event screen.
+ */
 class EventEditViewModel(
     savedStateHandle: SavedStateHandle,
     private val scheduleEventsRepository: ScheduleEventsRepositoryInterface,

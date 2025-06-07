@@ -2,6 +2,9 @@ package com.example.schedulebuilder.data
 
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repository that provides insert, update and delete methods on [Teacher].
+ */
 class TeachersRepository(private val teacherDao: TeacherDao) : TeachersRepositoryInterface {
     override fun getAllTeachersStream(): Flow<List<Teacher>> = teacherDao.getAllTeachers()
 

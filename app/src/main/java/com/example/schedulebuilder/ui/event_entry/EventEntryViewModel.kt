@@ -20,6 +20,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+/**
+ * ViewModel to retrieve and update an event in the event entry screen.
+ */
 class EventEntryViewModel(
     private val scheduleEventsRepository: ScheduleEventsRepositoryInterface,
     private val subjectsRepository: SubjectsRepositoryInterface,

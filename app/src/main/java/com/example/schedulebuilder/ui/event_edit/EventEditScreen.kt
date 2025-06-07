@@ -58,6 +58,9 @@ import com.example.schedulebuilder.ui.theme.UnizaLight
 import com.example.schedulebuilder.ui.theme.UnizaMedium
 import kotlinx.coroutines.CoroutineScope
 
+/**
+ * Navigation destination for the event edit screen.
+ */
 object EventEditDestination : NavDestination {
     override val route = "edit_schedule_event"
     const val EVENT_ID_ARG = "eventId"
@@ -202,7 +205,7 @@ fun EventEditDialogContent(
                     colors = ButtonColors(
                         contentColor = UnizaDark,
                         containerColor = Color.Transparent,
-                        disabledContentColor = UnizaDark,
+                        disabledContentColor = Color.Gray,
                         disabledContainerColor = Color.Transparent
                     ), onClick = onSaveEvent, enabled = eventUiState.isEntryValid
                 ) {

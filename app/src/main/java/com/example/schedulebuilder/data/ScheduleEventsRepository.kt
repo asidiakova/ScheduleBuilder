@@ -4,6 +4,9 @@ import android.content.Context
 import com.example.schedulebuilder.glance.updateScheduleWidget
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repository that provides insert, update and delete methods on [ScheduleEvent].
+ */
 class ScheduleEventsRepository(
     private val scheduleEventDao: ScheduleEventDao,
     private val context: Context

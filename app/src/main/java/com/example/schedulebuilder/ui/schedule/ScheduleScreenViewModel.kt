@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+
+/**
+ * UI state for the full schedule screen.
+ */
 class ScheduleScreenViewModel(private val scheduleEventsRepository: ScheduleEventsRepositoryInterface) : ViewModel() {
 
     val scheduleUiState: StateFlow<ScheduleUiState> = scheduleEventsRepository.getAllFullScheduleEventsStream().map { ScheduleUiState(it) }

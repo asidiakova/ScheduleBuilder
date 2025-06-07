@@ -2,6 +2,9 @@ package com.example.schedulebuilder.data
 
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repository that provides insert, update and delete methods on [Location].
+ */
 class LocationsRepository(private val locationDao: LocationDao): LocationsRepositoryInterface {
     override fun getAllLocationsStream(): Flow<List<Location>> = locationDao.getAllLocations()
 

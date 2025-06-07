@@ -10,7 +10,9 @@ import com.example.schedulebuilder.ui.event_edit.EventEditViewModel
 import com.example.schedulebuilder.ui.event_entry.EventEntryViewModel
 import com.example.schedulebuilder.ui.schedule.ScheduleScreenViewModel
 
-
+/**
+ * Provides Factory objects which are needed to create the ViewModels
+ */
 object AppViewModelProvider {
     val Factory = viewModelFactory {
 
@@ -41,7 +43,6 @@ object AppViewModelProvider {
 
     }
 }
-
 
 fun CreationExtras.scheduleBuilderApplication(): ScheduleBuilderApplication =
     (this[AndroidViewModelFactory.APPLICATION_KEY] as ScheduleBuilderApplication)
