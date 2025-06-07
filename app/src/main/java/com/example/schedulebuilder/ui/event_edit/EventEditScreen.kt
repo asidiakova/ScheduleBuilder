@@ -67,7 +67,6 @@ object EventEditDestination : NavDestination {
     val routeWithArgs = "$route/{$EVENT_ID_ARG}"
 }
 
-
 @Composable
 fun EventEditScreen(
     navigateBack: () -> Unit,
@@ -397,7 +396,6 @@ fun ScheduleEventEntryForm(
     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.height_large)))
 
     RemoveEventButton(onRemoveEvent = onRemoveEvent)
-
 }
 
 

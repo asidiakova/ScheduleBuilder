@@ -134,7 +134,6 @@ class EventEditViewModel(
     }
 }
 
-
 fun FullScheduleEvent.toScheduleEventUiState(isEntryValid: Boolean = false): ScheduleEventUiState =
     ScheduleEventUiState(
         scheduleEventDetails = this.toScheduleEventDetails(), isEntryValid = isEntryValid

@@ -110,7 +110,6 @@ class EventEntryViewModel(
             scheduleEventsRepository.insertScheduleEvent(eventUiState.scheduleEventDetails.toScheduleEvent())
         }
     }
-
 }
 
 data class PredefinedSubjectsState(val subjectsList: List<Subject> = listOf())
@@ -151,7 +150,6 @@ fun ScheduleEventDetails.toCustomSubject(): Subject {
         shortenedCode = code, fullDisplayName = name
     )
 }
-
 
 fun ScheduleEventDetails.toScheduleEvent(): ScheduleEvent = ScheduleEvent(
     id = id,

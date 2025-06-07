@@ -40,7 +40,6 @@ object AppViewModelProvider {
                 scheduleBuilderApplication().container.scheduleEventsRepository
             )
         }
-
     }
 }
 

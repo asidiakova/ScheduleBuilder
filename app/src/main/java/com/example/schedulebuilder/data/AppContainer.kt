@@ -44,5 +44,4 @@ class AppDataContainer(private val context: Context) : AppContainer {
     override val locationsRepository: LocationsRepositoryInterface by lazy {
         LocationsRepository(ScheduleDatabase.getDatabase(context).locationDao())
     }
-
 }

@@ -335,7 +335,6 @@ fun ScheduleTable(
                             val cellWidthPx =
                                 with(LocalDensity.current) { (maxWidth / timeslots.size).toPx() }
 
-
                             events.filter { it.scheduleEvent.day - 1 == dayIndex }
                                 .forEach { event ->
                                     val startOffsetPx =

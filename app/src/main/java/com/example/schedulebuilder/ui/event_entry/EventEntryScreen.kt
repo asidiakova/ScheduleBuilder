@@ -83,7 +83,6 @@ object EventEntryDestination : NavDestination {
     override val route = "add_schedule_event"
 }
 
-
 @Composable
 fun EventEntryScreen(
     navigateBack: () -> Unit,

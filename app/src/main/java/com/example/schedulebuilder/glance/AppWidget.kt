@@ -122,5 +122,4 @@ class AppWidget : GlanceAppWidget() {
             }
         }
     }
-
 }
