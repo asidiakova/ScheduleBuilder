@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="schedule_empty_cell">#E3E3E3</color>
+    <color name="schedule_obligatory">#FAE2A8</color>
+    <color name="schedule_half_obligatory">#BEE8FB</color>
+    <color name="schedule_selective">#C6F8B1</color>
+
+    <color name="uniza_dark">#2b3a64</color>
+    <color name="uniza_medium">#4a5c92</color>
+    <color name="uniza_light">#EEF0FC</color>
+    <color name="uniza_light_accent">#D8DEFC</color>
+
+    <color name="dark_red">#ffdad6</color>
+    <color name="on_dark_red">#93000a</color>
+    <color name="warm_black">#1C1B1F</color>
+
+
+</resources>
